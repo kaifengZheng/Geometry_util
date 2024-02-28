@@ -1,0 +1,370 @@
+import numpy as np
+import pandas as pd
+from collections import Counter
+from ase import Atoms
+# from pymatgen.core.structure import Structure
+from pymatgen.core import Structure, Element,Molecule
+import pymatgen.symmetry.analyzer
+from scipy.spatial.distance import cdist
+from sklearn.decomposition import PCA
+def centerize_pos(atoms:Atoms) -> Atoms:
+    """
+    centerize the positions
+    """
+    positions=atoms.get_positions()
+    atoms.arrays['positions']=positions-positions.mean(axis=0)
+    return atoms
+
+def chang_basis(new_basis:np.array,positions:np.array)->np.array:
+    """
+    new_basis: need to be column vectors
+    """
+    scale=np.array([[1/np.linalg.norm(new_basis[:,0]),0,0],
+                [0,1/np.linalg.norm(new_basis[:,1]),0],
+                [0,0,1/np.linalg.norm(new_basis[:,2])]])
+    basis_scale_new=np.round(np.dot(new_basis,scale),5)
+    A=np.round(np.linalg.inv(basis_scale_new),5)
+    pos_new=np.round(np.dot(A,positions.T).T,5)
+    return pos_new
+
+def change_basis_atom(atoms:Atoms,basis)->Atoms:
+    """
+    atoms: Atoms object
+    basis: 3*3 matrix
+    """
+    positions=atoms.get_positions()
+    new_pos=chang_basis(basis,positions)
+    atoms_new=atoms.copy()
+    atoms_new.arrays['positions']=np.round(new_pos,3)
+    return atoms_new # this cannot be the same atoms object
+def radius(positions):
+    """
+    This algorithm calculates the radius of
+    the circumscribed sphere of the polyhedron
+    particle
+    :param positions: coordinates
+    :return: radius of particle
+    """
+    center = positions.mean(axis=0)
+    vector = positions - center
+    dis = np.linalg.norm(vector,axis=1)
+    R = np.max(dis)
+    return R
+def radius_xy(positions):
+    """
+    This algorithm calculate radius based on xy plane
+    """
+    positions_xy=positions[:,:2]
+
+    center = positions_xy.mean(axis=0)
+    vector = positions_xy - center
+    dis = np.linalg.norm(vector,axis=1)
+    R = np.max(dis)
+    return R
+
+
+def equ_sites(path:str,absorber,cutoff,randomness=4):
+    """
+    :param positions: coordinates
+    :param cutoff:    cutoff distance defined by mutiple scattering radius
+    :return:          non-equ position indexes
+    """
+    # cutoff method
+    def duplicates(lst, item):
+        """
+        :param lst: the whole list
+        :param item: item which you want to find the duplication in the list
+        :return: the indexes of duplicate items
+        """
+        return [i for i, x in enumerate(lst) if x == item]
+    
+    if path.split('.')[1]=='xyz':
+        structure=Molecule.from_file(path)
+    else:
+        structure = Structure.from_file(path) 
+
+    absorber_species = Element(absorber)
+    print(absorber_species)
+    absorber_list = np.where(np.array(structure.species) == absorber_species)[0]
+    positions=structure.cart_coords
+    dis_all =  np.around(cdist(np.array(positions)[absorber_list],np.array(positions), metric="euclidean"),decimals=randomness)
+    dis_all.sort(axis=1)
+    dis_cut = [list(dis_all[i][dis_all[i] < cutoff]) for i in range(len(dis_all))]
+    dup = []
+    for i in range(len(dis_cut)):
+        dup.append(duplicates(dis_cut, dis_cut[i])[0])
+    #unique_index = list(set(dup))  # set can delete all duplicated items in a list
+    unique_index = dict()
+    for i in range(len(dup)):
+        if dup[i] in unique_index:
+            unique_index[dup[i]].append(i)
+        else:
+            unique_index.update({dup[i]:[i]})
+    num_sites=[]
+    uni_sites=list(unique_index.keys())
+    for i in range(len(uni_sites)):
+        num_sites.append(len(unique_index[uni_sites[i]]))
+    # sort it using sorted method. Do not use list.sort() method, because it returns a nonetype.
+    #unique_index = np.array(sorted(unique_index))
+    #print("number of atoms: {}".format(len(positions)))
+    #print("number of unique atoms: {}".format(len(atom_index))) #
+    
+    return np.array(uni_sites),np.array(num_sites)  #keys are those unique sites, values are the cooresponding equ-sites for those unique_sites
+def equ_sites_pointgroup(pos_dir):
+    mol=Molecule.from_file(pos_dir)
+    pointgroup=pymatgen.symmetry.analyzer.PointGroupAnalyzer(mol).get_equivalent_atoms()['eq_sets']
+    keys=list(pointgroup.keys())
+    num_sites=[len(pointgroup[keys[i]]) for i in range(len(keys))]
+    return keys, num_sites
+
+
+def getCN_dis_Oneshell(positions,center_position,N,thickness=0.1):
+    """
+    calculate coordination number and distance for N nearest neighbors with fixed error bar
+
+    Args:
+        positions (np.array): coordinates of one atom
+        center_position (np.array): coordinates of focused atom
+        N (int): nth nearest neighbor
+
+    Returns:
+        cn_collect(int): coordination number of Nth nearest neighbors of the center atom
+        dis(np.array): distance of Nth nearest neighbors of the center atom
+    """
+    CN = []
+    # center_position = positions.mean(axis=0)
+    dis_all = np.around(cdist([center_position], positions,metric='euclidean'), decimals=4) #must add [] here
+    dis_all.sort(axis=1)
+    freq = dict(Counter(list(dis_all[0])))
+    if 0.0 not in list(freq.keys()):
+        keys=list(freq.keys())
+        n=0
+        cn_collect=0
+        dis=[]
+        for k in keys:
+            #error is 0.3
+            if k<=keys[N-1]+thickness and k>=keys[N-1]:
+                cn_collect+=freq[k]
+                dis.append(k)
+            if k>list(freq.keys())[N-1]+thickness:
+                break
+        
+    else:
+        keys=list(freq.keys())
+        n=0
+        cn_collect=0
+        dis=[]
+        for k in keys:
+            #error is 0.3
+            if k<=keys[N]+thickness and k>=keys[N]:
+                cn_collect+=freq[k]
+                dis.append(k)
+            if k>list(freq.keys())[N]+thickness:
+                break
+                    
+    return cn_collect,dis
+
+def getCN_dis_N(atom:Atoms,N:int):
+    """
+    get atom-atom distance and coordination number for N nearest neighbors
+
+    Args:
+        atom (Atoms): cluster or molecule
+        N (int): nth nearest neighbor
+
+    Returns:
+        CN (list): coordination numbers of Nth nearest neighbors
+        dis (list): distance of Nth nearest neighbors
+        CN_ave (float): average coordination number of Nth nearest neighbors for the particle
+        dis_ave (float): average distance of Nth nearest neighbors for the particle
+        
+    """
+    pos=atom.arrays['positions']
+    CNs=[]
+    diss=[]
+    for i in range(len(pos)):
+        CN,dis=getCN_dis_Oneshell(pos,pos[i],N)
+        CNs.append(CN)
+        for d in dis:
+            diss.append(d)
+    CN_ave=np.mean(CNs)
+    return CNs,diss,CN_ave
+    
+
+def moment_descriptor(atom:Atoms):
+    """
+    used for cluster with regular shape
+    """
+    moment_atom=atom.get_moments_of_inertia(vectors=False)
+    I=np.sort(moment_atom) #I2 is the largest moment of inertia
+    zeta=((I[2]-I[1])**2+(I[1]-I[0])**2+(I[0]-I[2])**2)/(I[0]**2+I[1]**2+I[2]**2)
+    eta=(2*I[1]-I[0]-I[2])/I[2]
+    # dis=distance_matrix(atom.arrays['positions'],atom.arrays['positions'])
+    # dis_sort=np.round(np.sort(dis,axis=1),5) #set a tolerance of distance
+    # cn_n=[]
+    # for i in range(len(dis_sort)):
+    #     cn=np.unique(dis_sort[i],return_counts=True)[1][1]
+    #     cn_n.append(cn)
+    # cn_n = np.array(cn_n)
+    CNS,diss,CN_ave=getCN_dis_N(atom,1)
+    mean_c=CN_ave
+    RMS_c=np.sqrt(np.sum((CNS-mean_c)**2/len(CNS)))
+    if eta<10e-10 and eta>-10e-10:
+        eta=0.0
+    if zeta<10e-10 and zeta>-10e-10:
+        zeta=0.0
+    diameter=radius(atom)*2
+    atom_num=len(atom.get_positions())
+    return {"Departure from sphere":np.round(zeta,6),
+            "flatten":np.round(eta,6)+1,
+            "mean_c":np.round(mean_c,6),
+            "RMS_c":np.round(RMS_c,6),
+            "min_c":np.min(CNS),
+            "max_c":np.max(CNS),
+            "diameter":np.round(diameter,6),
+            "atom_number":atom_num}
+
+def pca_oblate(atom:Atoms):
+    pca=PCA(n_components=3)
+    pos=atom.get_positions()
+    pos = np.round(pos,5)
+    pos_next=np.zeros_like(pos)
+    max_value=np.max(pos,axis=0)
+    min_value=np.min(pos,axis=0)
+    c,b,a=np.sort(max_value-min_value)
+    c_next,b_next,a_next=0,0,0
+    i=0
+    while a-a_next>1e-4 or c-c_next>1e-4 or b-b_next>1e-4:
+        """
+              SCF loop
+        """
+        pos_next=pos
+        max_value=np.max(pos_next,axis=0)
+        min_value=np.min(pos_next,axis=0)
+        c_next,b_next,a_next=np.round(np.sort(max_value-min_value),5)
+        
+        result=pca.fit(pos_next)
+        pos_fit=result.fit_transform(pos_next)
+        pos=np.round(pos_fit,5)
+        max_value=np.max(pos,axis=0)
+        min_value=np.min(pos,axis=0)
+        c,b,a=np.round(np.sort(max_value-min_value),5)
+        i+=1
+
+
+    # #atoms_new=Atoms(atom.get_chemical_symbols(),pos_fit)
+    # flatten_base=np.round(np.sqrt(b**2+a**2),2)
+    # elongate_base=np.round(np.sqrt(a**2+c**2),2)
+
+    flatten=np.round(1-c/b,5)
+    elongate=np.round(b/a,5)
+    diameter=np.round(np.sqrt(a**2+b**2+c**2))
+    return {"flatten":flatten,"elongate":elongate,'diameter':diameter,'atom_num':len(pos)}
+
+
+def xy_oblate(atom:Atoms,basis):
+    positions=atom.get_positions()
+    center=positions.mean(axis=0)
+    positions=positions-center
+    
+
+
+    r=radius_xy(positions)
+    h=np.max(positions[:,2])
+    return h/r
+
+
+
+def radius(atom:Atoms):
+    """
+    This algorithm calculates the radius of
+    the circumscribed sphere of the polyhedron
+    particle
+    :param positions: coordinates
+    :return: radius of particle
+    """
+    positions = atom.get_positions()
+    center = positions.mean(axis=0)
+    vector = positions - center
+    dis = np.linalg.norm(vector,axis=1)
+    R = np.max(dis)
+    return R
+
+
+def my_ceil(a, precision=2):
+    return np.round(a + 0.5 * 10 ** (-precision), precision)
+
+
+def center_atom_finder(ele_num, supercell_info):
+    positions = supercell_info.arrays['positions']
+    num = supercell_info.arrays['numbers']
+    center_pos = np.mean(positions, axis=0)
+    atom_dis = cdist([center_pos], positions,metric='euclidean')
+    stacked_data = np.hstack((num.reshape(-1, 1), atom_dis.reshape(-1, 1), positions[:, :]))
+    data = pd.DataFrame(stacked_data, columns=["atom", "dis2center", "x", "y", "z"])
+    data_ele = data[data['atom'] == float(ele_num)]
+    center_ele = data_ele[data_ele['dis2center'] == data_ele['dis2center'].min()]
+    index = center_ele.index[0]
+
+    center_atom_pos = np.array([center_ele['x'], center_ele['y'], center_ele['z']]).reshape(1, 3)
+    update_atom_dis = cdist(center_atom_pos, positions,metric='euclidean').reshape(-1, 1)
+    data['dis2center'] = data['dis2center'].replace(np.array(data['dis2center']), update_atom_dis)
+
+    # shift the center position to the assigned center atom
+    data['x'] = data['x'] - center_atom_pos[0][0]
+    data['y'] = data['y'] - center_atom_pos[0][1]
+    data['z'] = data['z'] - center_atom_pos[0][2]
+    data = data.sort_values(by="dis2center", ascending=True)
+    return index, data
+
+
+def nn_dis_rough(data, layer=1):
+    return my_ceil(data['dis2center'], 2).unique()[layer]
+
+
+def atom_by_layers(ele_num, supercell, layer=1):
+    _, data = center_atom_finder(ele_num, supercell)
+    distance = nn_dis_rough(data, layer)
+    supercell_2 = supercell.copy()
+    data_cut_sphere = data[data['x'] ** 2 + data['y'] ** 2 + data['z'] ** 2 <= distance ** 2]
+    rebu_coord = np.hstack((np.array(data_cut_sphere['x']).reshape(-1, 1),
+                            np.array(data_cut_sphere['y']).reshape(-1, 1),
+                            np.array(data_cut_sphere['z']).reshape(-1, 1)))
+    rebu_num = np.array(data_cut_sphere['atom'])
+    supercell_2.arrays['positions'] = rebu_coord
+    supercell_2.arrays['numbers'] = np.int0(rebu_num)
+    print(
+        f"#{layer} layer is {distance} Angstrom from center element (The distance is the 2 digits ceil of exact value of nn distance).")
+    # view(supercell_2,viewer='x3d')=
+    return supercell_2
+
+def neighbor_dis(atoms,pos_center,cutoff):
+    """
+    calculate the distance between the center atom and its neighbors
+
+    Args:
+        atoms (ase.Atoms): the atoms object of undistorted structure
+        pos_center (np.array): the position of the center atom 
+        cutoff (float): cutoff distance, the distortion will be calculated within this distance
+
+    Returns:
+        np.array,np.array: the list of the index of the neighbors and the list of the distance between the center atom and its neighbors
+    """
+    pos=atoms.arrays['positions']
+    dis=cdist(pos_center, pos, metric="euclidean")
+    dist_unique=np.unique(dis)
+    index_NN=[]
+    dist_NN=[]
+    for i in range(len(dist_unique)):
+        if dist_unique[i]<=cutoff and dist_unique[i]!=0:
+            index=np.where(dis==dist_unique[i])[0]
+            for k in index:
+                index_NN.append(int(k))
+                dist_NN.append(dist_unique[i])
+    return np.array(index_NN),np.array(dist_NN)
+
+def MIAD(atoms):
+    dis=atoms.get_all_distances(mic=False)
+    lmaid=1/(len(dis)*(len(dis)-1))*np.sum(dis)
+    return lmaid
+
