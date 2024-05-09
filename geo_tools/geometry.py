@@ -37,7 +37,7 @@ def change_basis_atom(atoms:Atoms,basis)->Atoms:
     atoms_new=atoms.copy()
     atoms_new.arrays['positions']=np.round(new_pos,3)
     return atoms_new # this cannot be the same atoms object
-def radius(positions):
+def diameter_max(positions):
     """
     This algorithm calculates the radius of
     the circumscribed sphere of the polyhedron
@@ -48,9 +48,37 @@ def radius(positions):
     center = positions.mean(axis=0)
     vector = positions - center
     dis = np.linalg.norm(vector,axis=1)
-    R = np.max(dis)
-    return R
-def radius_xy(positions):
+    D = 2*np.max(dis)
+    return D
+def diameter_pca(positions):
+    pca=PCA(n_components=3)
+    pos = np.round(positions,5)
+    pos_next=np.zeros_like(pos)
+    max_value=np.max(pos,axis=0)
+    min_value=np.min(pos,axis=0)
+    c,b,a=np.sort(max_value-min_value)
+    c_next,b_next,a_next=0,0,0
+    i=0
+    while a-a_next>1e-4 or c-c_next>1e-4 or b-b_next>1e-4:
+        """
+              SCF loop
+        """
+        pos_next=pos
+        max_value=np.max(pos_next,axis=0)
+        min_value=np.min(pos_next,axis=0)
+        c_next,b_next,a_next=np.round(np.sort(max_value-min_value),5)
+        
+        result=pca.fit(pos_next)
+        pos_fit=result.fit_transform(pos_next)
+        pos=np.round(pos_fit,5)
+        max_value=np.max(pos,axis=0)
+        min_value=np.min(pos,axis=0)
+        c,b,a=np.round(np.sort(max_value-min_value),5)
+        i+=1
+    diameter=np.round(np.sqrt(a**2+b**2+c**2),2) #another method to calculate diameter
+    return diameter
+
+def diameter_xy(positions):
     """
     This algorithm calculate radius based on xy plane
     """
@@ -59,8 +87,15 @@ def radius_xy(positions):
     center = positions_xy.mean(axis=0)
     vector = positions_xy - center
     dis = np.linalg.norm(vector,axis=1)
-    R = np.max(dis)
-    return R
+    D = 2*np.max(dis)
+    return D
+def surface_per(atoms:Atoms):
+    """
+    calculate the percentage of surface atoms
+    """
+    CNs,diss,CN_ave=getCN_dis_N(atoms,1)
+    CN_surface=[cn for cn in CNs if cn<12]
+    return len(CN_surface)/len(CNs)
 
 
 def equ_sites(path:str,absorber,cutoff,randomness=4):
@@ -138,35 +173,45 @@ def getCN_dis_Oneshell(positions,center_position,N,thickness=0.1):
     freq = dict(Counter(list(dis_all[0])))
     if 0.0 not in list(freq.keys()):
         keys=list(freq.keys())
-        n=0
-        cn_collect=0
-        dis=[]
-        for k in keys:
-            #error is 0.3
-            if k<=keys[N-1]+thickness and k>=keys[N-1]:
-                cn_collect+=freq[k]
-                dis.append(k)
-            if k>list(freq.keys())[N-1]+thickness:
-                break
-        
+        if N<len(keys):
+            n=0
+            cn_collect=0
+            dis=[]
+            for k in keys:
+                #error is 0.3
+                if k<=keys[N-1]+thickness and k>=keys[N-1]:
+                    cn_collect+=freq[k]
+                    dis.append(k)
+                if k>list(freq.keys())[N-1]+thickness:
+                    break
+        else:
+            cn_collect=0
+            dis=[keys[-1]]
+            
     else:
         keys=list(freq.keys())
-        n=0
-        cn_collect=0
-        dis=[]
-        for k in keys:
-            #error is 0.3
-            if k<=keys[N]+thickness and k>=keys[N]:
-                cn_collect+=freq[k]
-                dis.append(k)
-            if k>list(freq.keys())[N]+thickness:
-                break
+        if N<len(keys):
+            n=0
+            cn_collect=0
+            dis=[]
+            for k in keys:
+                #error is 0.3
+                if k<=keys[N]+thickness and k>=keys[N]:
+                    cn_collect+=freq[k]
+                    dis.append(k)
+                if k>list(freq.keys())[N]+thickness:
+                    break
+        else:
+            cn_collect=0
+            dis=[keys[-1]]
+
                     
     return cn_collect,dis
 
+
 def getCN_dis_N(atom:Atoms,N:int):
     """
-    get atom-atom distance and coordination number for N nearest neighbors
+    get atom-atom distance and coordination number for N nearest neighbors and particle averaged coordination number
 
     Args:
         atom (Atoms): cluster or molecule
@@ -199,6 +244,13 @@ def moment_descriptor(atom:Atoms):
     I=np.sort(moment_atom) #I2 is the largest moment of inertia
     zeta=((I[2]-I[1])**2+(I[1]-I[0])**2+(I[0]-I[2])**2)/(I[0]**2+I[1]**2+I[2]**2)
     eta=(2*I[1]-I[0]-I[2])/I[2]
+    return zeta,eta
+def descriptor_table(atom:Atoms,oblate_method='moment'):
+    if oblate_method=='moment':
+        zeta,eta=moment_descriptor(atom)
+    if oblate_method=='pca':
+        flatten,elongate=pca_oblate(atom)
+
     # dis=distance_matrix(atom.arrays['positions'],atom.arrays['positions'])
     # dis_sort=np.round(np.sort(dis,axis=1),5) #set a tolerance of distance
     # cn_n=[]
@@ -206,23 +258,43 @@ def moment_descriptor(atom:Atoms):
     #     cn=np.unique(dis_sort[i],return_counts=True)[1][1]
     #     cn_n.append(cn)
     # cn_n = np.array(cn_n)
-    CNS,diss,CN_ave=getCN_dis_N(atom,1)
-    mean_c=CN_ave
-    RMS_c=np.sqrt(np.sum((CNS-mean_c)**2/len(CNS)))
+    CNS1,diss1,CN_ave1=getCN_dis_N(atom,1)
+    CNS2,diss2,CN_ave2=getCN_dis_N(atom,2)
+    CNS3,diss3,CN_ave3=getCN_dis_N(atom,3)
+    CNS4,diss4,CN_ave4=getCN_dis_N(atom,4)
+    # mean_c=CN_ave1
+    # RMS_c=np.sqrt(np.sum((CNS-mean_c)**2/len(CNS)))
     if eta<10e-10 and eta>-10e-10:
         eta=0.0
     if zeta<10e-10 and zeta>-10e-10:
         zeta=0.0
-    diameter=radius(atom)*2
-    atom_num=len(atom.get_positions())
-    return {"Departure from sphere":np.round(zeta,6),
-            "flatten":np.round(eta,6)+1,
-            "mean_c":np.round(mean_c,6),
-            "RMS_c":np.round(RMS_c,6),
-            "min_c":np.min(CNS),
-            "max_c":np.max(CNS),
-            "diameter":np.round(diameter,6),
+    diameter_longest=diameter_max(atom.get_positions())
+    diameter_pcaM=diameter_pca(atom.get_positions())
+    diameter_xyM=diameter_xy(atom.get_positions())
+    atom_num=len(atom.get_positions())#"Departure from sphere":np.round(zeta,6),
+    sur_per=surface_per(atom)
+            # "flatten":np.round(eta,2)+1,
+    dis_dict={
+            "CN1":np.round(CN_ave1,2),
+            "CN2":np.round(CN_ave2,2),
+            "CN3":np.round(CN_ave3,2),
+            "CN4":np.round(CN_ave4,2),
+            "diameter_longest":np.round(diameter_longest,2),
+            "diameter_pca":np.round(diameter_pcaM,2),
+            "diameter_xy":np.round(diameter_xyM,2),
+            "MIAD":np.round(MIAD(atom),2),
+            "surface ratio":np.round(sur_per,2),
             "atom_number":atom_num}
+    if oblate_method=='moment':
+        zeta,eta=moment_descriptor(atom)
+        dis_dict.update({"Departure from sphere":np.round(zeta,6),
+            "flatten":np.round(eta,2)+1})
+    if oblate_method=='pca':
+        flatten,elongate=pca_oblate(atom)
+        dis_dict.update({"flatten":np.round(flatten,2),
+            "elongate":np.round(elongate,2)})
+    return dis_dict
+
 
 def pca_oblate(atom:Atoms):
     pca=PCA(n_components=3)
@@ -258,8 +330,8 @@ def pca_oblate(atom:Atoms):
 
     flatten=np.round(1-c/b,5)
     elongate=np.round(b/a,5)
-    diameter=np.round(np.sqrt(a**2+b**2+c**2))
-    return {"flatten":flatten,"elongate":elongate,'diameter':diameter,'atom_num':len(pos)}
+    diameter=np.round(np.sqrt(a**2+b**2+c**2)) #another method to calculate diameter
+    return flatten,elongate
 
 
 def xy_oblate(atom:Atoms,basis):
@@ -364,7 +436,11 @@ def neighbor_dis(atoms,pos_center,cutoff):
     return np.array(index_NN),np.array(dist_NN)
 
 def MIAD(atoms):
+    """
+    Mean interatomic distance:
+       $l_{miad}=\frac{1}{N(N-1)}\sum^N_{i,j=1}|R_i-R_j|$
+    """
     dis=atoms.get_all_distances(mic=False)
-    lmaid=1/(len(dis)*(len(dis)-1))*np.sum(dis)
-    return lmaid
+    lmiad=1/(len(dis)*(len(dis)-1))*np.sum(dis)
+    return lmiad
 
