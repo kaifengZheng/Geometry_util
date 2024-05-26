@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from pymatgen.core.structure import Structure
 from pymatgen.io.ase import AseAtomsAdaptor
 from pymatgen.io.cif import  CifWriter
-from util_package.geo_tools.geometry import neighbor_dis
+from .geometry import neighbor_dis
 
 
 def layer_modifier(atoms,gap_width_pm,ori_lattice_par,cell_scale=[1,1,1],plot=True,legend=True)->Atoms:

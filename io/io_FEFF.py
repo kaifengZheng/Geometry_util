@@ -3,7 +3,7 @@ import os
 import shutil
 import re
 import glob
-from io_general import dir_list, dir_create, read_xyz
+from .io_general import dir_list, dir_create, read_xyz
 
 def read_xmu(path):
     """

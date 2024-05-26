@@ -1,7 +1,7 @@
-from util_package.geo_tools.geometry import *
+from .geometry import *
 from dataclasses import dataclass
-from util_package.geo_tools.lattice_modifier import change_basis_atom,cut_z
-from util_package.io.io_general import write_xyz
+from .lattice_modifier import change_basis_atom,cut_z
+from ..io.io_general import write_xyz
 from ase.cluster import Octahedron
 from scipy.spatial.distance import cdist
 from ase import Atoms
@@ -49,7 +49,7 @@ class particle:
 class particle_database:
     element:str
     shape_all=list()
-    def predifine_data(self,lattice_par):
+    def predefine_data(self,lattice_par):
         reg_oct_2=Octahedron(self.element,2,latticeconstant=lattice_par)
         reg_oct_3=Octahedron(self.element,3,latticeconstant=lattice_par)
         reg_oct_4=Octahedron(self.element,4,latticeconstant=lattice_par)
@@ -86,7 +86,7 @@ class particle_database:
             particle(f'HEX_O1_2_SQ_O1',lattice_par,HEX_O1_2_SQ_O1),particle(f'HEX_O1_3_SQ_O1',lattice_par,HEX_O1_3_SQ_O1),particle(f'HEX_O1_4_SQ_O1',lattice_par,HEX_O1_4_SQ_O1),
             particle(f'HEX_O1_2_SQ_O2',lattice_par,HEX_O1_2_SQ_O2)]
         for p in shape_list:
-            self.append(p)
+            self.shape_all.append(p)
         # print(f"shape_list1={len(shape_list)}") #DEBUG
         for i in range(len(shape_list)):
             self.cut_particle_multi(shape_list[i],111)
@@ -161,7 +161,7 @@ class particle_database:
             if len(cut_atoms.positions)<6:
                 break
             else:
-                self.append(particle(f'{name_particle}_cut_ori_{plane}_l_{layer}',lattice_par,cut_atoms))
+                self.shape_all.append(particle(f'{name_particle}_cut_ori_{plane}_l_{layer}',lattice_par,cut_atoms))
             
         
 def particle_cut(particle_obj,plane,layer):
