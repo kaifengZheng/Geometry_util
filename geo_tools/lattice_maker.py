@@ -1,3 +1,4 @@
+import numpy as np
 #a: lattice constant
 #x,y,z are how many times lattice extends along this direction
 #x,y,z must large than 1
