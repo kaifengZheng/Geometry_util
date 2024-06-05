@@ -236,7 +236,7 @@ def getCN_dis_N(atom:Atoms,N:int):
     return CNs,diss,CN_ave
     
 
-def moment_descriptor(atom:Atoms):
+def moment_descriptor(atom:Atoms,consider_prolate=True):
     """
     used for cluster with regular shape
     """
@@ -244,12 +244,12 @@ def moment_descriptor(atom:Atoms):
     I=np.sort(moment_atom) #I2 is the largest moment of inertia
     zeta=((I[2]-I[1])**2+(I[1]-I[0])**2+(I[0]-I[2])**2)/(I[0]**2+I[1]**2+I[2]**2)
     eta=(2*I[1]-I[0]-I[2])/I[2]
+    if eta>0:
+        eta=-1
     return zeta,eta
-def descriptor_table(atom:Atoms,oblate_method='moment'):
-    if oblate_method=='moment':
-        zeta,eta=moment_descriptor(atom)
-    if oblate_method=='pca':
-        flatten,elongate=pca_oblate(atom)
+def descriptor_table(atom:Atoms,consider_prolate=False):
+    zeta,eta=moment_descriptor(atom,consider_prolate=consider_prolate)
+    flatten,elongate=pca_oblate(atom)
 
     # dis=distance_matrix(atom.arrays['positions'],atom.arrays['positions'])
     # dis_sort=np.round(np.sort(dis,axis=1),5) #set a tolerance of distance
@@ -268,7 +268,7 @@ def descriptor_table(atom:Atoms,oblate_method='moment'):
         eta=0.0
     if zeta<10e-10 and zeta>-10e-10:
         zeta=0.0
-    diameter_longest=diameter_max(atom.get_positions())
+    diameter_2radius=diameter_max(atom.get_positions())
     diameter_pcaM=diameter_pca(atom.get_positions())
     diameter_xyM=diameter_xy(atom.get_positions())
     atom_num=len(atom.get_positions())#"Departure from sphere":np.round(zeta,6),
@@ -279,20 +279,15 @@ def descriptor_table(atom:Atoms,oblate_method='moment'):
             "CN2":np.round(CN_ave2,2),
             "CN3":np.round(CN_ave3,2),
             "CN4":np.round(CN_ave4,2),
-            "diameter_longest":np.round(diameter_longest,2),
+            "diameter_2radius":np.round(diameter_2radius,2),
             "diameter_pca":np.round(diameter_pcaM,2),
             "diameter_xy":np.round(diameter_xyM,2),
             "MIAD":np.round(MIAD(atom),2),
             "surface ratio":np.round(sur_per,2),
+            "Departure from sphere(moment)":np.round(zeta,6),
+            "flattening_moment":np.round(eta,2)+1,
+            "flattening_pca":np.round(flatten,2),
             "atom_number":atom_num}
-    if oblate_method=='moment':
-        zeta,eta=moment_descriptor(atom)
-        dis_dict.update({"Departure from sphere":np.round(zeta,6),
-            "flatten":np.round(eta,2)+1})
-    if oblate_method=='pca':
-        flatten,elongate=pca_oblate(atom)
-        dis_dict.update({"flatten":np.round(flatten,2),
-            "elongate":np.round(elongate,2)})
     return dis_dict
 
 
@@ -328,7 +323,7 @@ def pca_oblate(atom:Atoms):
     # flatten_base=np.round(np.sqrt(b**2+a**2),2)
     # elongate_base=np.round(np.sqrt(a**2+c**2),2)
 
-    flatten=np.round(1-c/b,5)
+    flatten=np.round(c/b,5)
     elongate=np.round(b/a,5)
     diameter=np.round(np.sqrt(a**2+b**2+c**2)) #another method to calculate diameter
     return flatten,elongate
