@@ -22,7 +22,7 @@ class particle:
         pos_center=pos-center
         self.atom_obj.set_positions(np.round(pos_center,3))
     def shape_size(self):
-        return pca_oblate(self.atom_obj)
+        return descriptor_table(self.atom_obj)
     def num_atom(self):
         return len(self.atom_obj.get_positions())
     def positions(self):
