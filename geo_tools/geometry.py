@@ -244,8 +244,6 @@ def moment_descriptor(atom:Atoms,consider_prolate=True):
     I=np.sort(moment_atom) #I2 is the largest moment of inertia
     zeta=((I[2]-I[1])**2+(I[1]-I[0])**2+(I[0]-I[2])**2)/(I[0]**2+I[1]**2+I[2]**2)
     eta=(2*I[1]-I[0]-I[2])/I[2]
-    if eta>0:
-        eta=-1
     return zeta,eta
 def descriptor_table(atom:Atoms,consider_prolate=False):
     zeta,eta=moment_descriptor(atom,consider_prolate=consider_prolate)
