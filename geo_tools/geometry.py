@@ -235,8 +235,34 @@ def getCN_dis_N(atom:Atoms,N:int):
     CN_ave=np.mean(CNs)
     return CNs,diss,CN_ave
     
-
-def moment_descriptor(atom:Atoms,consider_prolate=True):
+def ellipsoid(atom:Atoms,tor=1e-3):
+    def khachiyan_algorithm(atom:Atoms,tor=1e-3):
+        positions=atom.get_positions()
+        (n,d) = positions.shape
+        Q=np.vstack([np.copy(positions.T),np.ones(n)])
+        u=np.ones(n)/n
+        error = float('inf')
+        while error > tor:
+            X=np.dot(np.dot(Q,np.diag(u)),Q.T)
+            M=np.diag(np.dot(np.dot(Q.T,np.linalg.inv(X)),Q))
+            j=np.argmax(M)
+            step_size=(M[j]-d-1)/((d+1)*(M[j]-1))
+            new_u=(1-step_size)*u
+            new_u[j]+=step_size
+            error=np.linalg.norm(new_u-u)
+            u=new_u
+        c=np.dot(u,positions)
+        A_inv=np.linalg.inv(np.dot(np.dot(positions.T,np.diag(u)),positions)-np.outer(c,c))/d
+        return c,A_inv
+    c,A_inv=khachiyan_algorithm(atom,tor=tor)
+    eignvalue,eignvector=np.linalg.eig(A_inv)
+    a=np.sqrt(eignvalue[0])
+    b=np.sqrt(eignvalue[1])
+    c=np.sqrt(eignvalue[2])
+    return a,b,c
+    
+        
+def moment_descriptor(atom:Atoms):
     """
     used for cluster with regular shape
     """
@@ -245,47 +271,98 @@ def moment_descriptor(atom:Atoms,consider_prolate=True):
     zeta=((I[2]-I[1])**2+(I[1]-I[0])**2+(I[0]-I[2])**2)/(I[0]**2+I[1]**2+I[2]**2)
     eta=(2*I[1]-I[0]-I[2])/I[2]
     return zeta,eta
-def descriptor_table(atom:Atoms,consider_prolate=False):
-    zeta,eta=moment_descriptor(atom,consider_prolate=consider_prolate)
-    flatten,elongate=pca_oblate(atom)
+def descriptor_table(atom:Atoms,all=True,descriptors=[]):
+    if all==True:
+        zeta,eta=moment_descriptor(atom)
+        flatten,elongate=pca_oblate(atom)
 
-    # dis=distance_matrix(atom.arrays['positions'],atom.arrays['positions'])
-    # dis_sort=np.round(np.sort(dis,axis=1),5) #set a tolerance of distance
-    # cn_n=[]
-    # for i in range(len(dis_sort)):
-    #     cn=np.unique(dis_sort[i],return_counts=True)[1][1]
-    #     cn_n.append(cn)
-    # cn_n = np.array(cn_n)
-    CNS1,diss1,CN_ave1=getCN_dis_N(atom,1)
-    CNS2,diss2,CN_ave2=getCN_dis_N(atom,2)
-    CNS3,diss3,CN_ave3=getCN_dis_N(atom,3)
-    CNS4,diss4,CN_ave4=getCN_dis_N(atom,4)
-    # mean_c=CN_ave1
-    # RMS_c=np.sqrt(np.sum((CNS-mean_c)**2/len(CNS)))
-    if eta<10e-10 and eta>-10e-10:
-        eta=0.0
-    if zeta<10e-10 and zeta>-10e-10:
-        zeta=0.0
-    diameter_2radius=diameter_max(atom.get_positions())
-    diameter_pcaM=diameter_pca(atom.get_positions())
-    diameter_xyM=diameter_xy(atom.get_positions())
-    atom_num=len(atom.get_positions())#"Departure from sphere":np.round(zeta,6),
-    sur_per=surface_per(atom)
-            # "flatten":np.round(eta,2)+1,
-    dis_dict={
-            "CN1":np.round(CN_ave1,2),
-            "CN2":np.round(CN_ave2,2),
-            "CN3":np.round(CN_ave3,2),
-            "CN4":np.round(CN_ave4,2),
-            "diameter_2radius":np.round(diameter_2radius,2),
-            "diameter_pca":np.round(diameter_pcaM,2),
-            "diameter_xy":np.round(diameter_xyM,2),
-            "MIAD":np.round(MIAD(atom),2),
-            "surface ratio":np.round(sur_per,2),
-            "Departure from sphere(moment)":np.round(zeta,6),
-            "flattening_moment":np.round(eta,2)+1,
-            "flattening_pca":np.round(flatten,2),
-            "atom_number":atom_num}
+        # dis=distance_matrix(atom.arrays['positions'],atom.arrays['positions'])
+        # dis_sort=np.round(np.sort(dis,axis=1),5) #set a tolerance of distance
+        # cn_n=[]
+        # for i in range(len(dis_sort)):
+        #     cn=np.unique(dis_sort[i],return_counts=True)[1][1]
+        #     cn_n.append(cn)
+        # cn_n = np.array(cn_n)
+        CNS1,diss1,CN_ave1=getCN_dis_N(atom,1)
+        CNS2,diss2,CN_ave2=getCN_dis_N(atom,2)
+        CNS3,diss3,CN_ave3=getCN_dis_N(atom,3)
+        CNS4,diss4,CN_ave4=getCN_dis_N(atom,4)
+        # mean_c=CN_ave1
+        # RMS_c=np.sqrt(np.sum((CNS-mean_c)**2/len(CNS)))
+        if eta<10e-10 and eta>-10e-10:
+            eta=0.0
+        if zeta<10e-10 and zeta>-10e-10:
+            zeta=0.0
+        diameter_2radius=diameter_max(atom.get_positions())
+        diameter_pcaM=diameter_pca(atom.get_positions())
+        diameter_xyM=diameter_xy(atom.get_positions())
+        atom_num=len(atom.get_positions())#"Departure from sphere":np.round(zeta,6),
+        sur_per=surface_per(atom)
+        ellipsoid_oblate=ellipsoid(atom)
+                # "flatten":np.round(eta,2)+1,
+        dis_dict={
+                "CN1":np.round(CN_ave1,2),
+                "CN2":np.round(CN_ave2,2),
+                "CN3":np.round(CN_ave3,2),
+                "CN4":np.round(CN_ave4,2),
+                "diameter_2radius":np.round(diameter_2radius,2),
+                "diameter_pca":np.round(diameter_pcaM,2),
+                "diameter_xy":np.round(diameter_xyM,2),
+                "MIAD":np.round(MIAD(atom),2),
+                "surface ratio":np.round(sur_per,2),
+                "Departure from sphere(moment)":np.round(zeta,6),
+                "flattening_moment":np.round(eta,2)+1,
+                "flattening_pca":np.round(flatten,2),
+                "atom_number":atom_num,
+                "ellipsoid_a":ellipsoid_oblate[0],
+                "ellipsoid_b":ellipsoid_oblate[1],
+                "ellipsoid_c":ellipsoid_oblate[2]}
+    if all==False:
+        dis_dict={}
+        if "CN1" in descriptors:
+            CNS1,diss1,CN_ave1=getCN_dis_N(atom,1)
+            dis_dict["CN1"]=np.round(CN_ave1,2)
+        if "CN2" in descriptors:
+            CNS2,diss2,CN_ave2=getCN_dis_N(atom,2)
+            dis_dict["CN2"]=np.round(CN_ave2,2)
+        if "CN3" in descriptors:
+            CNS3,diss3,CN_ave3=getCN_dis_N(atom,3)
+            dis_dict["CN3"]=np.round(CN_ave3,2)
+        if "CN4" in descriptors:
+            CNS4,diss4,CN_ave4=getCN_dis_N(atom,4)
+            dis_dict["CN4"]=np.round(CN_ave4,2)
+        if "diameter_2radius" in descriptors:
+            diameter_2radius=diameter_max(atom.get_positions())
+            dis_dict["diameter_2radius"]=np.round(diameter_2radius,2)
+        if "diameter_pca" in descriptors:
+            diameter_pcaM=diameter_pca(atom.get_positions())
+            dis_dict["diameter_pca"]=np.round(diameter_pcaM,2)
+        if "diameter_xy" in descriptors:
+            diameter_xyM=diameter_xy(atom.get_positions())
+            dis_dict["diameter_xy"]=np.round(diameter_xyM,2)
+        if "MIAD" in descriptors:
+            MIAD_value=MIAD(atom)
+            dis_dict["MIAD"]=np.round(MIAD_value,2)
+        if "surface ratio" in descriptors:
+            sur_per=surface_per(atom)
+            dis_dict["surface ratio"]=np.round(sur_per,2)
+        if "Departure from sphere(moment)" in descriptors:
+            zeta,eta=moment_descriptor(atom)
+            dis_dict["Departure from sphere(moment)"]=np.round(zeta,6)
+        if "flattening_moment" in descriptors:
+            zeta,eta=moment_descriptor(atom)
+            dis_dict["flattening_moment"]=np.round(eta,2)+1
+        if "flattening_pca" in descriptors:
+            flatten,elongate=pca_oblate(atom)
+            dis_dict["flattening_pca"]=np.round(flatten,2)
+        if "atom_number" in descriptors:
+            atom_num=len(atom.get_positions())
+            dis_dict["atom_number"]=atom_num   
+        if "ellipsoid" in descriptors:
+            ellipsoid_oblate=ellipsoid(atom)
+            dis_dict["ellipsoid_a"]=ellipsoid_oblate[0]
+            dis_dict["ellipsoid_b"]=ellipsoid_oblate[1]
+            dis_dict["ellipsoid_c"]=ellipsoid_oblate[2]    
     return dis_dict
 
 
@@ -325,18 +402,6 @@ def pca_oblate(atom:Atoms):
     elongate=np.round(b/a,5)
     diameter=np.round(np.sqrt(a**2+b**2+c**2)) #another method to calculate diameter
     return flatten,elongate
-
-
-def xy_oblate(atom:Atoms,basis):
-    positions=atom.get_positions()
-    center=positions.mean(axis=0)
-    positions=positions-center
-    
-
-
-    r=radius_xy(positions)
-    h=np.max(positions[:,2])
-    return h/r
 
 
 
