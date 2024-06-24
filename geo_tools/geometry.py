@@ -7,6 +7,8 @@ from pymatgen.core import Structure, Element,Molecule
 import pymatgen.symmetry.analyzer
 from scipy.spatial.distance import cdist
 from sklearn.decomposition import PCA
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
 def centerize_pos(atoms:Atoms) -> Atoms:
     """
     centerize the positions
@@ -251,15 +253,15 @@ def ellipsoid(atom:Atoms,tor=1e-3):
             new_u[j]+=step_size
             error=np.linalg.norm(new_u-u)
             u=new_u
-        c=np.dot(u,positions)
-        A_inv=np.linalg.inv(np.dot(np.dot(positions.T,np.diag(u)),positions)-np.outer(c,c))/d
-        return c,A_inv
-    c,A_inv=khachiyan_algorithm(atom,tor=tor)
+        center=np.dot(u,positions)
+        A_inv=np.linalg.inv(np.dot(np.dot(positions.T,np.diag(u)),positions)-np.outer(center,center))/d
+        return center,A_inv
+    center,A_inv=khachiyan_algorithm(atom,tor=tor)
     eignvalue,eignvector=np.linalg.eig(A_inv)
-    a=np.sqrt(eignvalue[0])
-    b=np.sqrt(eignvalue[1])
-    c=np.sqrt(eignvalue[2])
-    return a,b,c
+    a=np.sqrt(1/eignvalue[0])
+    b=np.sqrt(1/eignvalue[1])
+    c=np.sqrt(1/eignvalue[2])
+    return a,b,c,center,eignvector
     
         
 def moment_descriptor(atom:Atoms):
