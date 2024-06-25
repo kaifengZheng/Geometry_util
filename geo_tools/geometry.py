@@ -361,10 +361,16 @@ def descriptor_table(atom:Atoms,all=True,descriptors=[]):
             atom_num=len(atom.get_positions())
             dis_dict["atom_number"]=atom_num   
         if "ellipsoid" in descriptors:
-            ellipsoid_oblate=ellipsoid(atom)
-            dis_dict["ellipsoid_a"]=ellipsoid_oblate[0]
-            dis_dict["ellipsoid_b"]=ellipsoid_oblate[1]
-            dis_dict["ellipsoid_c"]=ellipsoid_oblate[2]    
+            try:
+                ellipsoid_oblate=ellipsoid(atom)
+                dis_dict["ellipsoid_a"]=ellipsoid_oblate[0]
+                dis_dict["ellipsoid_b"]=ellipsoid_oblate[1]
+                dis_dict["ellipsoid_c"]=ellipsoid_oblate[2]
+            except:
+                dis_dict["ellipsoid_a"]=0
+                dis_dict["ellipsoid_b"]=0
+                dis_dict["ellipsoid_c"]=0
+                print("ellipsoid cannot be calculated")    
     return dis_dict
 
 
