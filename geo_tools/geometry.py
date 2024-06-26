@@ -300,7 +300,10 @@ def descriptor_table(atom:Atoms,all=True,descriptors=[]):
         diameter_xyM=diameter_xy(atom.get_positions())
         atom_num=len(atom.get_positions())#"Departure from sphere":np.round(zeta,6),
         sur_per=surface_per(atom)
-        ellipsoid_oblate=ellipsoid(atom)
+        try:
+            ellipsoid_oblate=ellipsoid(atom)
+        except:
+            ellipsoid_oblate=[0,0,0]
                 # "flatten":np.round(eta,2)+1,
         dis_dict={
                 "CN1":np.round(CN_ave1,2),
