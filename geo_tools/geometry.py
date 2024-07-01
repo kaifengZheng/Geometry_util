@@ -300,7 +300,10 @@ def descriptor_table(atom:Atoms,all=True,descriptors=[]):
         diameter_xyM=diameter_xy(atom.get_positions())
         atom_num=len(atom.get_positions())#"Departure from sphere":np.round(zeta,6),
         sur_per=surface_per(atom)
-        ellipsoid_oblate=ellipsoid(atom)
+        try:
+            ellipsoid_oblate=ellipsoid(atom)
+        except:
+            ellipsoid_oblate=[0,0,0]
                 # "flatten":np.round(eta,2)+1,
         dis_dict={
                 "CN1":np.round(CN_ave1,2),
@@ -361,10 +364,16 @@ def descriptor_table(atom:Atoms,all=True,descriptors=[]):
             atom_num=len(atom.get_positions())
             dis_dict["atom_number"]=atom_num   
         if "ellipsoid" in descriptors:
-            ellipsoid_oblate=ellipsoid(atom)
-            dis_dict["ellipsoid_a"]=ellipsoid_oblate[0]
-            dis_dict["ellipsoid_b"]=ellipsoid_oblate[1]
-            dis_dict["ellipsoid_c"]=ellipsoid_oblate[2]    
+            try:
+                ellipsoid_oblate=ellipsoid(atom)
+                dis_dict["ellipsoid_a"]=ellipsoid_oblate[0]
+                dis_dict["ellipsoid_b"]=ellipsoid_oblate[1]
+                dis_dict["ellipsoid_c"]=ellipsoid_oblate[2]
+            except:
+                dis_dict["ellipsoid_a"]=0
+                dis_dict["ellipsoid_b"]=0
+                dis_dict["ellipsoid_c"]=0
+                print("ellipsoid cannot be calculated")    
     return dis_dict
 
 
