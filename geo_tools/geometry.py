@@ -310,6 +310,7 @@ def descriptor_table(atom:Atoms,all=True,descriptors=[]):
                 "CN2":np.round(CN_ave2,2),
                 "CN3":np.round(CN_ave3,2),
                 "CN4":np.round(CN_ave4,2),
+                "bond_length":np.round(np.mean(diss1),2),
                 "diameter_2radius":np.round(diameter_2radius,2),
                 "diameter_pca":np.round(diameter_pcaM,2),
                 "diameter_xy":np.round(diameter_xyM,2),
@@ -322,6 +323,7 @@ def descriptor_table(atom:Atoms,all=True,descriptors=[]):
                 "ellipsoid_a":ellipsoid_oblate[0],
                 "ellipsoid_b":ellipsoid_oblate[1],
                 "ellipsoid_c":ellipsoid_oblate[2]}
+        return dis_dict
     if all==False:
         dis_dict={}
         if "CN1" in descriptors:
@@ -336,6 +338,9 @@ def descriptor_table(atom:Atoms,all=True,descriptors=[]):
         if "CN4" in descriptors:
             CNS4,diss4,CN_ave4=getCN_dis_N(atom,4)
             dis_dict["CN4"]=np.round(CN_ave4,2)
+        if "bond_length" in descriptors:
+            CNS1,diss1,CN_ave1=getCN_dis_N(atom,1)
+            dis_dict["bond_length"]=np.round(np.mean(diss1),2)
         if "diameter_2radius" in descriptors:
             diameter_2radius=diameter_max(atom.get_positions())
             dis_dict["diameter_2radius"]=np.round(diameter_2radius,2)
@@ -374,7 +379,7 @@ def descriptor_table(atom:Atoms,all=True,descriptors=[]):
                 dis_dict["ellipsoid_b"]=0
                 dis_dict["ellipsoid_c"]=0
                 print("ellipsoid cannot be calculated")    
-    return dis_dict
+        return dis_dict
 
 
 def pca_oblate(atom:Atoms):
