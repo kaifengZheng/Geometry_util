@@ -331,7 +331,8 @@ def descriptor_table(atom:Atoms,all=True,descriptors=[]):
         diameter_pcaM=diameter_pca(atom.get_positions())
         diameter_xyM=diameter_xy(atom.get_positions())
         atom_num=len(atom.get_positions())#"Departure from sphere":np.round(zeta,6),
-        sur_per=surface_per(atom)
+        sur_per_CN=surface_per(atom,method='CN')
+        sur_per_GCN=surface_per(atom,method='GCN')
         try:
             ellipsoid_oblate=ellipsoid(atom)
         except:
@@ -351,10 +352,11 @@ def descriptor_table(atom:Atoms,all=True,descriptors=[]):
                 "diameter_pca":np.round(diameter_pcaM,2),
                 "diameter_xy":np.round(diameter_xyM,2),
                 "MIAD":np.round(MIAD(atom),2),
-                "surface ratio":np.round(sur_per,2),
+                "SVR_CN":np.round(sur_per_CN,2),
+                "SVR_GCN":np.round(sur_per_GCN,2),
                 "Departure from sphere(moment)":np.round(zeta,6),
-                "flattening_moment":np.round(eta,2)+1,
-                "flattening_pca":np.round(flatten,2),
+                "oblateness_moment":np.round(eta,2)+1,
+                "oblateness_pca":np.round(flatten,2),
                 "atom_number":atom_num,
                 "ellipsoid_a":ellipsoid_oblate[0],
                 "ellipsoid_b":ellipsoid_oblate[1],
@@ -401,16 +403,19 @@ def descriptor_table(atom:Atoms,all=True,descriptors=[]):
         if "MIAD" in descriptors:
             MIAD_value=MIAD(atom)
             dis_dict["MIAD"]=np.round(MIAD_value,2)
-        if "surface ratio" in descriptors:
+        if "SVR_CN" in descriptors:
             sur_per=surface_per(atom)
-            dis_dict["surface ratio"]=np.round(sur_per,2)
+            dis_dict["SVR_CN"]=np.round(sur_per_CN,2)
+        if "SVR_GCN" in descriptors:
+            sur_per=surface_per(atom)
+            dis_dict["SVR_GCN"]=np.round(sur_per_GCN,2)
         if "Departure from sphere(moment)" in descriptors:
             zeta,eta=moment_descriptor(atom)
             dis_dict["Departure from sphere(moment)"]=np.round(zeta,6)
-        if "flattening_moment" in descriptors:
+        if "oblateness_moment" in descriptors:
             zeta,eta=moment_descriptor(atom)
             dis_dict["flattening_moment"]=np.round(eta,2)+1
-        if "flattening_pca" in descriptors:
+        if "oblateness_pca" in descriptors:
             flatten,elongate=pca_oblate(atom)
             dis_dict["flattening_pca"]=np.round(flatten,2)
         if "atom_number" in descriptors:
