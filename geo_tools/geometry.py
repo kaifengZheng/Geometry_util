@@ -100,7 +100,7 @@ def surface_per(atoms:Atoms,method='CN'):
         CNs,diss,CN_ave=getCN_dis_N(atoms,1,option='CN')
     if method=='GCN':
         CNs,diss,CN_ave=getCN_dis_N(atoms,1,option='GCN')
-    CN_surface=[cn for cn in CNs if cn<np.max(CNs)]
+    CN_surface=[cn for cn in CNs if cn<12]
     return len(CN_surface)/len(CNs)
 
 
