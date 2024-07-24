@@ -413,10 +413,10 @@ def descriptor_table(atom:Atoms,all=True,descriptors=[]):
             dis_dict["Departure from sphere(moment)"]=np.round(zeta,6)
         if "oblateness_moment" in descriptors:
             zeta,eta=moment_descriptor(atom)
-            dis_dict["flattening_moment"]=np.round(eta,2)+1
+            dis_dict["oblateness_moment"]=np.round(eta,2)+1
         if "oblateness_pca" in descriptors:
             flatten,elongate=pca_oblate(atom)
-            dis_dict["flattening_pca"]=np.round(flatten,2)
+            dis_dict["oblateness_pca"]=np.round(flatten,2)
         if "atom_number" in descriptors:
             atom_num=len(atom.get_positions())
             dis_dict["atom_number"]=atom_num   
