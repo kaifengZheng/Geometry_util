@@ -404,19 +404,19 @@ def descriptor_table(atom:Atoms,all=True,descriptors=[]):
             dis_dict["MIAD"]=np.round(MIAD_value,2)
         if "SVR_CN" in descriptors:
             sur_per=surface_per(atom)
-            dis_dict["SVR_CN"]=np.round(sur_per_CN,2)
+            dis_dict["SVR_CN"]=np.round(sur_per,2)
         if "SVR_GCN" in descriptors:
             sur_per=surface_per(atom)
-            dis_dict["SVR_GCN"]=np.round(sur_per_GCN,2)
+            dis_dict["SVR_GCN"]=np.round(sur_per,2)
         if "Departure from sphere(moment)" in descriptors:
             zeta,eta=moment_descriptor(atom)
             dis_dict["Departure from sphere(moment)"]=np.round(zeta,6)
         if "oblateness_moment" in descriptors:
             zeta,eta=moment_descriptor(atom)
-            dis_dict["flattening_moment"]=np.round(eta,2)+1
+            dis_dict["oblateness_moment"]=np.round(eta,2)+1
         if "oblateness_pca" in descriptors:
             flatten,elongate=pca_oblate(atom)
-            dis_dict["flattening_pca"]=np.round(flatten,2)
+            dis_dict["oblateness_pca"]=np.round(flatten,2)
         if "atom_number" in descriptors:
             atom_num=len(atom.get_positions())
             dis_dict["atom_number"]=atom_num   
