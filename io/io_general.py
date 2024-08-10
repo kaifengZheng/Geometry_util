@@ -30,7 +30,7 @@ def write_xyz(fileobj, images, comment='', fmt='%22.15f'):
     if '\n' in comment:
         raise ValueError('Comment line should not have line breaks.')
 
-    natoms = len(images)
+    natoms = len(images.positions)
     fileobj.write('%d\n%s\n' % (natoms, comment))
     for s, (x, y, z) in zip(images.symbols, images.positions):
         fileobj.write('%-2s %s %s %s\n' % (s, fmt % x, fmt % y, fmt % z))
