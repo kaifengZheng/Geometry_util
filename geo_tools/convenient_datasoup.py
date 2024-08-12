@@ -45,10 +45,10 @@ class particle:
         view(self.atom_obj,viewer)
 
 
-@dataclass
 class particle_database:
-    element:str
-    shape_all=list()
+    def __init__(self,element):
+        self.element=element
+        self.shape_all=list()
     def predefine_data(self,lattice_par):
         reg_oct_2=Octahedron(self.element,2,latticeconstant=lattice_par)
         reg_oct_3=Octahedron(self.element,3,latticeconstant=lattice_par)
