@@ -373,8 +373,9 @@ def descriptor_table(atom:Atoms,all=True,descriptors=[]):
                 dis_dict["ellipsoid_a"]=0
                 dis_dict["ellipsoid_b"]=0
                 dis_dict["ellipsoid_c"]=0
-                print("ellipsoid cannot be calculated")    
-    return dis_dict
+                print("ellipsoid cannot be calculated")
+        reordered_dict = {k: dis_dict[k] for k in descriptors}    
+    return reordered_dict
 
 
 def pca_oblate(atom:Atoms):
