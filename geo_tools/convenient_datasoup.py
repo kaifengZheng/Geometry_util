@@ -45,10 +45,10 @@ class particle:
         view(self.atom_obj,viewer)
 
 
-@dataclass
 class particle_database:
-    element:str
-    shape_all=list()
+    def __init__(self,element):
+        self.element=element
+        self.shape_all=list()
     def predefine_data(self,lattice_par):
         reg_oct_2=Octahedron(self.element,2,latticeconstant=lattice_par)
         reg_oct_3=Octahedron(self.element,3,latticeconstant=lattice_par)
@@ -108,13 +108,13 @@ class particle_database:
                 write_xyz(file1,shape.atom_obj,comment=f"{shape.name} lattice constant={shape.lattice_par}")
                 file1.close()
     def shape_info(self):
-        try:
-            shape_dict={}
-            for shape in self.shape_all:
-                shape_dict[shape.name]=shape.shape_size()
-            return pd.DataFrame(shape_dict) 
-        except Exception as e:
-            print(e)
+        # try:
+        shape_dict={}
+        for shape in self.shape_all:
+            shape_dict[shape.name]=shape.shape_size()
+        return pd.DataFrame(shape_dict) 
+        # except Exception as e:
+        #     print(e)
     def remove_by_name(self,names,inplace=False):
         """
             name: list

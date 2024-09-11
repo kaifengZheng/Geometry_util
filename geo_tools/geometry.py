@@ -91,11 +91,15 @@ def diameter_xy(positions):
     dis = np.linalg.norm(vector,axis=1)
     D = 2*np.max(dis)
     return D
-def surface_per(atoms:Atoms):
+def surface_per(atoms:Atoms,method='CN'):
     """
     calculate the percentage of surface atoms
+    method=[CN,GCN]
     """
-    CNs,diss,CN_ave=getCN_dis_N(atoms,1)
+    if method=='CN':
+        CNs,diss,CN_ave=getCN_dis_N(atoms,1,option='CN')
+    if method=='GCN':
+        CNs,diss,CN_ave=getCN_dis_N(atoms,1,option='GCN')
     CN_surface=[cn for cn in CNs if cn<12]
     return len(CN_surface)/len(CNs)
 
@@ -209,15 +213,33 @@ def getCN_dis_Oneshell(positions,center_position,N,thickness=0.1):
 
                     
     return cn_collect,dis
+def getGCN_dis_Oneshell(positions,center_position,N,thickness=0.1):
+    dis_all = np.around(cdist([center_position], positions,metric='euclidean'), decimals=4)[0] #must add [] here
+    sort_dis=np.unique(np.sort(dis_all[dis_all>0]))
+    if N>len(sort_dis):
+        return 0,sort_dis[-1]
+        #second GCN calculates the second nearest neighbor coordination numbers, and weighted by the 
+        #first coordination numbers of the second shell atoms.
+    atom_shell=np.where(np.isclose(dis_all,sort_dis[N-1],atol=thickness))[0]
+    CNs=[]
+    for i in atom_shell:
+        dis_all = np.around(cdist([positions[i]], positions,metric='euclidean'), decimals=4)[0] #must add [] here
+        min_dis=np.min(dis_all[dis_all>0])
+        atom_shell=np.where(np.isclose(dis_all,min_dis,atol=thickness))[0]
+        CNs.append(len(atom_shell))
+    # print(CNs)
+    # print(np.sum(CNs)/np.max(CNs))
+    # print(CNs)
+    return np.sum(CNs)/np.max(CNs),sort_dis[N-1]
 
-
-def getCN_dis_N(atom:Atoms,N:int):
+def getCN_dis_N(atom:Atoms,N:int,option='CN'):
     """
-    get atom-atom distance and coordination number for N nearest neighbors and particle averaged coordination number
+    get atom-atom distance and coordination number for N nearest neighbors
 
     Args:
         atom (Atoms): cluster or molecule
         N (int): nth nearest neighbor
+        option: select using "CN" or "GCN" method 
 
     Returns:
         CN (list): coordination numbers of Nth nearest neighbors
@@ -230,12 +252,15 @@ def getCN_dis_N(atom:Atoms,N:int):
     CNs=[]
     diss=[]
     for i in range(len(pos)):
-        CN,dis=getCN_dis_Oneshell(pos,pos[i],N)
+        if option=='CN':
+            CN,dis=getCN_dis_Oneshell(pos,pos[i],N)
+        if option=='GCN':
+            CN,dis=getGCN_dis_Oneshell(pos,pos[i],N)
+            # print("pass_1")
         CNs.append(CN)
-        for d in dis:
-            diss.append(d)
     CN_ave=np.mean(CNs)
-    return CNs,diss,CN_ave
+    
+    return CNs,dis,CN_ave
     
 def ellipsoid(atom:Atoms,tor=1e-3):
     def khachiyan_algorithm(atom:Atoms,tor=1e-3):
@@ -289,6 +314,12 @@ def descriptor_table(atom:Atoms,all=True,descriptors=[]):
         CNS2,diss2,CN_ave2=getCN_dis_N(atom,2)
         CNS3,diss3,CN_ave3=getCN_dis_N(atom,3)
         CNS4,diss4,CN_ave4=getCN_dis_N(atom,4)
+        GCNs1,diss1,GCN_ave1=getCN_dis_N(atom,1,option='GCN')
+        
+        GCNs2,diss2,GCN_ave2=getCN_dis_N(atom,2,option='GCN')
+        GCNs3,diss3,GCN_ave3=getCN_dis_N(atom,3,option='GCN')
+        GCNs4,diss4,GCN_ave4=getCN_dis_N(atom,4,option='GCN')
+        # print(GCN_ave1,GCN_ave2,GCN_ave3,GCN_ave4)
         # mean_c=CN_ave1
         # RMS_c=np.sqrt(np.sum((CNS-mean_c)**2/len(CNS)))
         if eta<10e-10 and eta>-10e-10:
@@ -299,7 +330,8 @@ def descriptor_table(atom:Atoms,all=True,descriptors=[]):
         diameter_pcaM=diameter_pca(atom.get_positions())
         diameter_xyM=diameter_xy(atom.get_positions())
         atom_num=len(atom.get_positions())#"Departure from sphere":np.round(zeta,6),
-        sur_per=surface_per(atom)
+        sur_per_CN=surface_per(atom,method='CN')
+        sur_per_GCN=surface_per(atom,method='GCN')
         try:
             ellipsoid_oblate=ellipsoid(atom)
         except:
@@ -310,18 +342,25 @@ def descriptor_table(atom:Atoms,all=True,descriptors=[]):
                 "CN2":np.round(CN_ave2,2),
                 "CN3":np.round(CN_ave3,2),
                 "CN4":np.round(CN_ave4,2),
+                "GCN1":np.round(GCN_ave1,2),
+                "GCN2":np.round(GCN_ave2,2),
+                "GCN3":np.round(GCN_ave3,2),
+                "GCN4":np.round(GCN_ave4,2),
+                "bond_length":np.round(np.mean(diss1),2),
                 "diameter_2radius":np.round(diameter_2radius,2),
                 "diameter_pca":np.round(diameter_pcaM,2),
                 "diameter_xy":np.round(diameter_xyM,2),
                 "MIAD":np.round(MIAD(atom),2),
-                "surface ratio":np.round(sur_per,2),
+                "SVR_CN":np.round(sur_per_CN,2),
+                "SVR_GCN":np.round(sur_per_GCN,2),
                 "Departure from sphere(moment)":np.round(zeta,6),
-                "flattening_moment":np.round(eta,2)+1,
-                "flattening_pca":np.round(flatten,2),
+                "oblateness_moment":np.round(eta,2)+1,
+                "oblateness_pca":np.round(flatten,2),
                 "atom_number":atom_num,
                 "ellipsoid_a":ellipsoid_oblate[0],
                 "ellipsoid_b":ellipsoid_oblate[1],
                 "ellipsoid_c":ellipsoid_oblate[2]}
+        return dis_dict
     if all==False:
         dis_dict={}
         if "CN1" in descriptors:
@@ -336,6 +375,21 @@ def descriptor_table(atom:Atoms,all=True,descriptors=[]):
         if "CN4" in descriptors:
             CNS4,diss4,CN_ave4=getCN_dis_N(atom,4)
             dis_dict["CN4"]=np.round(CN_ave4,2)
+        if "GCN1" in descriptors:
+            CNS1,diss1,CN_ave1=getCN_dis_N(atom,1,option='GCN')
+            dis_dict["GCN1"]=np.round(GCN_ave1,2)
+        if "GCN2" in descriptors:
+            CNS2,diss2,CN_ave2=getCN_dis_N(atom,2,option='GCN')
+            dis_dict["GCN2"]=np.round(GCN_ave2,2)
+        if "GCN3" in descriptors:
+            CNS3,diss3,CN_ave3=getCN_dis_N(atom,3,option='GCN')
+            dis_dict["GCN3"]=np.round(GCN_ave3,2)
+        if "GCN4" in descriptors:
+            CNS4,diss4,CN_ave4=getCN_dis_N(atom,4,option='GCN')
+            dis_dict["GCN4"]=np.round(GCN_ave4,2)
+        if "bond_length" in descriptors:
+            CNS1,diss1,CN_ave1=getCN_dis_N(atom,1)
+            dis_dict["bond_length"]=np.round(np.mean(diss1),2)
         if "diameter_2radius" in descriptors:
             diameter_2radius=diameter_max(atom.get_positions())
             dis_dict["diameter_2radius"]=np.round(diameter_2radius,2)
@@ -348,18 +402,21 @@ def descriptor_table(atom:Atoms,all=True,descriptors=[]):
         if "MIAD" in descriptors:
             MIAD_value=MIAD(atom)
             dis_dict["MIAD"]=np.round(MIAD_value,2)
-        if "surface ratio" in descriptors:
+        if "SVR_CN" in descriptors:
             sur_per=surface_per(atom)
-            dis_dict["surface ratio"]=np.round(sur_per,2)
+            dis_dict["SVR_CN"]=np.round(sur_per,2)
+        if "SVR_GCN" in descriptors:
+            sur_per=surface_per(atom)
+            dis_dict["SVR_GCN"]=np.round(sur_per,2)
         if "Departure from sphere(moment)" in descriptors:
             zeta,eta=moment_descriptor(atom)
             dis_dict["Departure from sphere(moment)"]=np.round(zeta,6)
-        if "flattening_moment" in descriptors:
+        if "oblateness_moment" in descriptors:
             zeta,eta=moment_descriptor(atom)
-            dis_dict["flattening_moment"]=np.round(eta,2)+1
-        if "flattening_pca" in descriptors:
+            dis_dict["oblateness_moment"]=np.round(eta,2)+1
+        if "oblateness_pca" in descriptors:
             flatten,elongate=pca_oblate(atom)
-            dis_dict["flattening_pca"]=np.round(flatten,2)
+            dis_dict["oblateness_pca"]=np.round(flatten,2)
         if "atom_number" in descriptors:
             atom_num=len(atom.get_positions())
             dis_dict["atom_number"]=atom_num   
