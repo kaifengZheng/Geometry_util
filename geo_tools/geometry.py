@@ -220,7 +220,12 @@ def getCN_dis_Oneshell(positions,center_position,N,thickness=0.1):
 
                     
     return cn_collect,dis
-def getGCN_dis_Oneshell(positions,center_position,N,thickness=0.1):
+def getGCN_dis_Oneshell(positions,center_position,N,thickness=1e-8):
+    """
+    calculate coordination number and distance for N nearest neighbors with fixed error bar
+    NOTE: for default, the thickness is a very samll value, which is the case used for perfect lattice materials.
+          In contrast to amorphous or disordered materials, the thickness should be larger than 0.1.
+    """
     dis_all = np.around(cdist([center_position], positions,metric='euclidean'), decimals=4)[0] #must add [] here
     sort_dis=np.unique(np.sort(dis_all[dis_all>0]))
     if N>len(sort_dis):
