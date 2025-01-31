@@ -54,6 +54,10 @@ class particle_database:
         self.element=element
         self.shape_all=list()
     def predefine_data(self,lattice_par):
+        """
+           lattice_par: float, lattice parameter of the crystal, it is better to set lattice_par round
+                        to two decimal numbers.
+        """
         reg_oct_2=Octahedron(self.element,2,latticeconstant=lattice_par)
         reg_oct_3=Octahedron(self.element,3,latticeconstant=lattice_par)
         reg_oct_4=Octahedron(self.element,4,latticeconstant=lattice_par)

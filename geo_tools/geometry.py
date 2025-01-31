@@ -183,6 +183,7 @@ def getCN_dis_Oneshell(positions,center_position,N,thickness=1e-1):
     
     """
     # center_position = positions.mean(axis=0)
+    # The precision is 0.1A
     dis_all = np.around(cdist([center_position], positions,metric='euclidean'), decimals=1)[0] #must add [] here
     sort_dis=np.unique(np.sort(dis_all[dis_all>0]))
     if N>len(sort_dis):
@@ -197,7 +198,7 @@ def getGCN_dis_Oneshell(positions,center_position,N,thickness=1e-1):
     calculate Generalized coordination number and distance for N nearest neighbors with fixed error bar
 
     """
-    dis_all = np.around(cdist([center_position], positions,metric='euclidean'), decimals=3)[0] #must add [] here
+    dis_all = np.around(cdist([center_position], positions,metric='euclidean'), decimals=1)[0] #must add [] here
     sort_dis=np.unique(np.sort(dis_all[dis_all>0]))
     if N>len(sort_dis):
         return 0,sort_dis[-1]
@@ -206,7 +207,7 @@ def getGCN_dis_Oneshell(positions,center_position,N,thickness=1e-1):
     atom_shell=np.where(np.isclose(dis_all,sort_dis[N-1],atol=thickness))[0]
     CNs=[]
     for i in atom_shell:
-        dis_all = np.around(cdist([positions[i]], positions,metric='euclidean'), decimals=4)[0] #must add [] here
+        dis_all = np.around(cdist([positions[i]], positions,metric='euclidean'), decimals=1)[0] #must add [] here
         min_dis=np.min(dis_all[dis_all>0])
         atom_shell=np.where(np.isclose(dis_all,min_dis,atol=thickness))[0]
         CNs.append(len(atom_shell))
