@@ -178,6 +178,11 @@ def getCN_dis_Oneshell(positions,center_position,N,thickness=0.1):
     Returns:
         cn_collect(int): coordination number of Nth nearest neighbors of the center atom
         dis(np.array): distance of Nth nearest neighbors of the center atom
+    
+    NOTE: calculate coordination number and distance for N nearest neighbors with fixed error bar
+          for default, the thickness is a very samll value, which is the case used for perfect lattice materials.
+          In contrast to amorphous or disordered materials, the thickness should be larger than 0.1.
+    
     """
     CN = []
     # center_position = positions.mean(axis=0)
