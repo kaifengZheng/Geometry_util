@@ -84,15 +84,18 @@ class particle_database:
         # reg_oct_9=Octahedron('Pt',9,latticeconstant=3.92)
         
         # reg_oct_10=Octahedron('Pt',10,latticeconstant=3.92)
-        shape_list=[particle(f'OCT_2',lattice_par,reg_oct_2),particle(f'OCT_3',lattice_par,reg_oct_3),particle(f'OCT_4',lattice_par,reg_oct_4),particle(f'OCT_5',lattice_par,reg_oct_5),particle(f'OCT_6',lattice_par,reg_oct_6), particle(f'OCT_7',lattice_par,reg_oct_7),particle(f'OCT_8',lattice_par,reg_oct_8),
-            particle(f'COC_O1',lattice_par,COC_O1),particle(f'COC_O2',lattice_par,COC_O2),particle(f'COC_O3',lattice_par,COC_O3),particle(f'COC_O4',lattice_par,COC_O4), particle(f'COC_O5',lattice_par,COC_O5),
-            particle(f'HEX_O1_SQ_O1',lattice_par,HEX_O1_SQ_O1),particle(f'HEX_O2_SQ_O2',lattice_par,HEX_O2_SQ_O2),particle(f'HEX_O3_SQ_O2',lattice_par,HEX_O3_SQ_O2),
-            particle(f'HEX_O1_2_SQ_O1',lattice_par,HEX_O1_2_SQ_O1),particle(f'HEX_O1_3_SQ_O1',lattice_par,HEX_O1_3_SQ_O1),particle(f'HEX_O1_4_SQ_O1',lattice_par,HEX_O1_4_SQ_O1),
-            particle(f'HEX_O1_2_SQ_O2',lattice_par,HEX_O1_2_SQ_O2)]
+        shape_list=[particle(f'OCT_2',reg_oct_2,lattice_par),particle(f'OCT_3',reg_oct_3,lattice_par),particle(f'OCT_4',reg_oct_4,lattice_par),particle(f'OCT_5',reg_oct_5,lattice_par),particle(f'OCT_6',reg_oct_6,lattice_par), particle(f'OCT_7',reg_oct_7,lattice_par),particle(f'OCT_8',reg_oct_8,lattice_par),
+            particle(f'COC_O1',COC_O1,lattice_par),particle(f'COC_O2',COC_O2,lattice_par),particle(f'COC_O3',COC_O3,lattice_par),particle(f'COC_O4',COC_O4,lattice_par), particle(f'COC_O5',COC_O5,lattice_par),
+            particle(f'HEX_O1_SQ_O1',HEX_O1_SQ_O1,lattice_par),particle(f'HEX_O2_SQ_O2',HEX_O2_SQ_O2,lattice_par),particle(f'HEX_O3_SQ_O2',HEX_O3_SQ_O2,lattice_par),
+            particle(f'HEX_O1_2_SQ_O1',HEX_O1_2_SQ_O1,lattice_par),particle(f'HEX_O1_3_SQ_O1',HEX_O1_3_SQ_O1,lattice_par),particle(f'HEX_O1_4_SQ_O1',HEX_O1_4_SQ_O1,lattice_par),
+            particle(f'HEX_O1_2_SQ_O2',HEX_O1_2_SQ_O2,lattice_par)]
+        # print(shape_list)
         for p in shape_list:
+            
             self.shape_all.append(p)
         # print(f"shape_list1={len(shape_list)}") #DEBUG
         for i in range(len(shape_list)):
+            # print(shape_list[i])
             self.cut_particle_multi(shape_list[i],111)
         # print(f"shape_list2={len(shape_list)}") #DEBUG
         for i in range(len(shape_list)):
@@ -178,14 +181,14 @@ class particle_database:
             if len(cut_atoms.positions)<6:
                 break
             else:
-                self.shape_all.append(particle(f'{name_particle}_cut_ori_{plane}_l_{layer}',lattice_par,cut_atoms))
+                self.shape_all.append(particle(f'{name_particle}_cut_ori_{plane}_l_{layer}',cut_atoms,lattice_par))
             
         
 def particle_cut(particle_obj,plane,layer):
     name_particle=particle_obj.name
     lattice_par=particle_obj.lattice_par
     cut_atoms=particle_obj.cut_by_surface(plane,layer)
-    return particle(f'{name_particle}_cut_ori_{plane}_l_{layer}',lattice_par,cut_atoms)
+    return particle(f'{name_particle}_cut_ori_{plane}_l_{layer}',cut_atoms,lattice_par)
 
 def list_duplicates(seq):
     tally = defaultdict(list)
