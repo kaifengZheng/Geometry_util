@@ -9,6 +9,13 @@ from scipy.spatial.distance import cdist
 from sklearn.decomposition import PCA
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
+from ase.io import read
+from tqdm import tqdm
+from glob import glob
+import os
+from os import sys
+import platform
+system=platform.system()
 def centerize_pos(atoms:Atoms) -> Atoms:
     """
     centerize the positions
@@ -574,24 +581,28 @@ def read_xyz_to_properties(foldername:str)->pd.DataFrame:
     """
     read the xyz files in the folder and calculate the properties of each structure
     """
-    import os
-    from ase.io import read
-    from tqdm import tqdm
+
 
     # Initialize an empty list to store the data
     data = []
-
+    index=[]
+    filename_list=glob(foldername+"/*.xyz")
     # Loop through all files in the folder
-    for filename in tqdm(os.listdir(foldername)):
-        if filename.endswith('.xyz'):
-            filepath = os.path.join(foldername, filename)
-            atoms = 
-            properties = descriptor_table(atoms)
-            properties['filename'] = filename  # Add filename to properties
-            data.append(properties)
+    for filename in tqdm(filename_list):
+        try:
+            atoms = read(filename)
+            properties_temp = descriptor_table(atoms)
+            if system=="Windows":
+                filename=filename.split('\\')[-1]  # Add  to properties
+            else:
+                filename=filename.split('/')[-1]
+            data.append(properties_temp)
+            index.append(filename)
+        except Exception as e:
+            print(f"Error reading {filename}: {e}")
 
     # Convert the list of dictionaries to a DataFrame
-    df = pd.DataFrame(data)
+    df = pd.DataFrame(data, index=index)
 
     return df
 
