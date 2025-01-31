@@ -586,16 +586,17 @@ def read_xyz_to_properties(foldername:str)->pd.DataFrame:
     # Initialize an empty list to store the data
     data = []
     index=[]
+    if system=="Windows":
+        split_symbol='\\'
+    else:
+        split_symbol='/'
     filename_list=glob(foldername+"/*.xyz")
     # Loop through all files in the folder
     for filename in tqdm(filename_list):
         try:
             atoms = read(filename)
             properties_temp = descriptor_table(atoms)
-            if system=="Windows":
-                filename=filename.split('\\')[-1]  # Add  to properties
-            else:
-                filename=filename.split('/')[-1]
+            filename=filename.split(split_symbol)[-1]  # Add  to properties
             data.append(properties_temp)
             index.append(filename)
         except Exception as e:

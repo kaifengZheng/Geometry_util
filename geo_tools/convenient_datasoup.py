@@ -10,6 +10,7 @@ from ase.visualize import view
 from collections import defaultdict
 import pandas as pd
 import platform
+from tqdm import tqdm
 system=platform.system()
 
 
@@ -126,7 +127,7 @@ class particle_database:
     def shape_info(self):
         # try:
         shape_dict={}
-        for shape in self.shape_all:
+        for shape in tqdm(self.shape_all):
             shape_dict[shape.name]=shape.shape_size()
         return pd.DataFrame(shape_dict).astype(np.float64) 
         # except Exception as e:
