@@ -570,3 +570,28 @@ def MIAD(atoms):
     lmiad=1/(len(dis)*(len(dis)-1))*np.sum(dis)
     return lmiad
 
+def read_xyz_to_properties(foldername:str)->pd.DataFrame:
+    """
+    read the xyz files in the folder and calculate the properties of each structure
+    """
+    import os
+    from ase.io import read
+    from tqdm import tqdm
+
+    # Initialize an empty list to store the data
+    data = []
+
+    # Loop through all files in the folder
+    for filename in tqdm(os.listdir(foldername)):
+        if filename.endswith('.xyz'):
+            filepath = os.path.join(foldername, filename)
+            atoms = 
+            properties = descriptor_table(atoms)
+            properties['filename'] = filename  # Add filename to properties
+            data.append(properties)
+
+    # Convert the list of dictionaries to a DataFrame
+    df = pd.DataFrame(data)
+
+    return df
+

@@ -1,3 +1,6 @@
+import numpy as np
+from scipy.interpolate import interp1d
+
 def energy_grids_inter_multi(ref,spectrum):
     """
     regrid spectra to the energy grid of reference spectrum

@@ -128,7 +128,7 @@ class particle_database:
         else:
             print(f"REMOVE:\n{names}\n Please set inplace=True to delete")
     def append(self,particle_obj):
-        self.shape_all.append(particle_obj)
+        self.shape_all.extend(particle_obj)
     def similar_check(self,remove=False):
         dis=[]
         shapes=self.shape_all.copy()
