@@ -166,7 +166,7 @@ def equ_sites_pointgroup(pos_dir):
     return keys, num_sites
 
 
-def getCN_dis_Oneshell(positions,center_position,N,thickness=0.1):
+def getCN_dis_Oneshell(positions,center_position,N,thickness=1e-1):
     """
     calculate coordination number and distance for N nearest neighbors with fixed error bar
 
@@ -176,62 +176,28 @@ def getCN_dis_Oneshell(positions,center_position,N,thickness=0.1):
         N (int): nth nearest neighbor
 
     Returns:
-        cn_collect(int): coordination number of Nth nearest neighbors of the center atom
+        atom_shell(int): coordination number of Nth nearest neighbors of the center atom
         dis(np.array): distance of Nth nearest neighbors of the center atom
     
-    NOTE: calculate coordination number and distance for N nearest neighbors with fixed error bar
-          for default, the thickness is a very samll value, which is the case used for perfect lattice materials.
-          In contrast to amorphous or disordered materials, the thickness should be larger than 0.1.
+
     
     """
-    CN = []
     # center_position = positions.mean(axis=0)
-    dis_all = np.around(cdist([center_position], positions,metric='euclidean'), decimals=4) #must add [] here
-    dis_all.sort(axis=1)
-    freq = dict(Counter(list(dis_all[0])))
-    if 0.0 not in list(freq.keys()):
-        keys=list(freq.keys())
-        if N<len(keys):
-            n=0
-            cn_collect=0
-            dis=[]
-            for k in keys:
-                #error is 0.3
-                if k<=keys[N-1]+thickness and k>=keys[N-1]:
-                    cn_collect+=freq[k]
-                    dis.append(k)
-                if k>list(freq.keys())[N-1]+thickness:
-                    break
-        else:
-            cn_collect=0
-            dis=[keys[-1]]
-            
-    else:
-        keys=list(freq.keys())
-        if N<len(keys):
-            n=0
-            cn_collect=0
-            dis=[]
-            for k in keys:
-                #error is 0.3
-                if k<=keys[N]+thickness and k>=keys[N]:
-                    cn_collect+=freq[k]
-                    dis.append(k)
-                if k>list(freq.keys())[N]+thickness:
-                    break
-        else:
-            cn_collect=0
-            dis=[keys[-1]]
+    dis_all = np.around(cdist([center_position], positions,metric='euclidean'), decimals=1)[0] #must add [] here
+    sort_dis=np.unique(np.sort(dis_all[dis_all>0]))
+    if N>len(sort_dis):
+        return 0,sort_dis[-1]
+        #second GCN calculates the second nearest neighbor coordination numbers, and weighted by the 
+        #first coordination numbers of the second shell atoms.
+    # print(sort_dis)
+    atom_shell=len(np.where(np.isclose(dis_all,sort_dis[N-1],atol=thickness))[0]) 
+    return atom_shell,sort_dis[N-1]
+def getGCN_dis_Oneshell(positions,center_position,N,thickness=1e-1):
+    """
+    calculate Generalized coordination number and distance for N nearest neighbors with fixed error bar
 
-                    
-    return cn_collect,dis
-def getGCN_dis_Oneshell(positions,center_position,N,thickness=1e-8):
     """
-    calculate coordination number and distance for N nearest neighbors with fixed error bar
-    NOTE: for default, the thickness is a very samll value, which is the case used for perfect lattice materials.
-          In contrast to amorphous or disordered materials, the thickness should be larger than 0.1.
-    """
-    dis_all = np.around(cdist([center_position], positions,metric='euclidean'), decimals=4)[0] #must add [] here
+    dis_all = np.around(cdist([center_position], positions,metric='euclidean'), decimals=3)[0] #must add [] here
     sort_dis=np.unique(np.sort(dis_all[dis_all>0]))
     if N>len(sort_dis):
         return 0,sort_dis[-1]
@@ -274,6 +240,7 @@ def getCN_dis_N(atom:Atoms,N:int,option='CN'):
         if option=='GCN':
             CN,dis=getGCN_dis_Oneshell(pos,pos[i],N)
             # print("pass_1")
+        # print(CN)
         CNs.append(CN)
     CN_ave=np.mean(CNs)
     

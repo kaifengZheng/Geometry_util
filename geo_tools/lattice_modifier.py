@@ -138,9 +138,9 @@ def chang_basis(new_basis:np.array,positions:np.array)->np.array:
     scale=np.array([[1/np.linalg.norm(new_basis[:,0]),0,0],
                 [0,1/np.linalg.norm(new_basis[:,1]),0],
                 [0,0,1/np.linalg.norm(new_basis[:,2])]])
-    basis_scale_new=np.round(np.dot(new_basis,scale),5)
-    A=np.round(np.linalg.inv(basis_scale_new),5)
-    pos_new=np.round(np.dot(A,positions.T).T,5)
+    basis_scale_new=np.dot(new_basis,scale)
+    A=np.round(np.linalg.inv(basis_scale_new),3)
+    pos_new=np.round(np.dot(A,positions.T).T,3)
     return pos_new
 
 def centerize_pos(atoms:Atoms) -> Atoms:

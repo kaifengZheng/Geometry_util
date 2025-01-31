@@ -131,6 +131,7 @@ class particle_database:
         # try:
         shape_dict={}
         for shape in tqdm(self.shape_all):
+            # print(shape.name)
             shape_dict[shape.name]=shape.shape_size()
         return pd.DataFrame(shape_dict).astype(np.float64) 
         # except Exception as e:
