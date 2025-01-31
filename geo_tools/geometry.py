@@ -315,7 +315,6 @@ def descriptor_table(atom:Atoms,all=True,descriptors=[]):
         CNS3,diss3,CN_ave3=getCN_dis_N(atom,3)
         CNS4,diss4,CN_ave4=getCN_dis_N(atom,4)
         GCNs1,diss1,GCN_ave1=getCN_dis_N(atom,1,option='GCN')
-        
         GCNs2,diss2,GCN_ave2=getCN_dis_N(atom,2,option='GCN')
         GCNs3,diss3,GCN_ave3=getCN_dis_N(atom,3,option='GCN')
         GCNs4,diss4,GCN_ave4=getCN_dis_N(atom,4,option='GCN')
@@ -376,16 +375,16 @@ def descriptor_table(atom:Atoms,all=True,descriptors=[]):
             CNS4,diss4,CN_ave4=getCN_dis_N(atom,4)
             dis_dict["CN4"]=np.round(CN_ave4,2)
         if "GCN1" in descriptors:
-            CNS1,diss1,CN_ave1=getCN_dis_N(atom,1,option='GCN')
+            CNS1,diss1,GCN_ave1=getCN_dis_N(atom,1,option='GCN')
             dis_dict["GCN1"]=np.round(GCN_ave1,2)
         if "GCN2" in descriptors:
-            CNS2,diss2,CN_ave2=getCN_dis_N(atom,2,option='GCN')
+            CNS2,diss2,GCN_ave2=getCN_dis_N(atom,2,option='GCN')
             dis_dict["GCN2"]=np.round(GCN_ave2,2)
         if "GCN3" in descriptors:
-            CNS3,diss3,CN_ave3=getCN_dis_N(atom,3,option='GCN')
+            CNS3,diss3,GCN_ave3=getCN_dis_N(atom,3,option='GCN')
             dis_dict["GCN3"]=np.round(GCN_ave3,2)
         if "GCN4" in descriptors:
-            CNS4,diss4,CN_ave4=getCN_dis_N(atom,4,option='GCN')
+            CNS4,diss4,GCN_ave4=getCN_dis_N(atom,4,option='GCN')
             dis_dict["GCN4"]=np.round(GCN_ave4,2)
         if "bond_length" in descriptors:
             CNS1,diss1,CN_ave1=getCN_dis_N(atom,1)
@@ -430,8 +429,9 @@ def descriptor_table(atom:Atoms,all=True,descriptors=[]):
                 dis_dict["ellipsoid_a"]=0
                 dis_dict["ellipsoid_b"]=0
                 dis_dict["ellipsoid_c"]=0
-                print("ellipsoid cannot be calculated")    
-        return dis_dict
+                print("ellipsoid cannot be calculated")
+        # reordered_dict = {k: dis_dict[k] for k in descriptors}    
+    return dis_dict
 
 
 def pca_oblate(atom:Atoms):
