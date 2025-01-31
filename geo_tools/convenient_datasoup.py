@@ -9,13 +9,16 @@ import numpy as np
 from ase.visualize import view
 from collections import defaultdict
 import pandas as pd
+import platform
+system=platform.system()
 
 
 @dataclass
 class particle:
     name: str
-    lattice_par: np.float64
     atom_obj: Atoms
+    lattice_par: np.float64=None
+
     def __post_init__(self):
         pos=self.atom_obj.get_positions()
         center=np.mean(pos,axis=0)
@@ -94,6 +97,19 @@ class particle_database:
         for i in range(len(shape_list)):
             self.cut_particle_multi(shape_list[i],100)
         # print(f"shape_list3={len(shape_list)}") #DEBUG
+    def load_from_xyz(self,dir):
+        if system=="Windows":
+            split_symbol='\\'
+        else:
+            split_symbol='/'
+        filename_list=glob(dir+split_symbol+"*.xyz")
+        for filename in filename_list:
+            try:
+                shape=read(filename)
+                self.shape_all.append(particle(filename.split(split_symbol)[-1],shape))
+            except Exception as e:
+                print(f"Error reading {filename}: {e}")
+
     def write(self,dir,num=None):
         """
         in case we want to generate particles based on different lattice parameters
@@ -112,7 +128,7 @@ class particle_database:
         shape_dict={}
         for shape in self.shape_all:
             shape_dict[shape.name]=shape.shape_size()
-        return pd.DataFrame(shape_dict) 
+        return pd.DataFrame(shape_dict).astype(np.float64) 
         # except Exception as e:
         #     print(e)
     def remove_by_name(self,names,inplace=False):
