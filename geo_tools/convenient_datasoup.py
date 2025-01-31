@@ -33,11 +33,11 @@ class particle:
         return self.atom_obj.get_positions()
     def cut_by_surface(self,plane,layer):
         if plane==111:
-            basis=np.array([[1,1,-2],[1,-1,0],[1,1,1]]).T
+            basis=np.array([[1.,1.,-2.],[1.,-1.,0.],[1.,1.,1.]]).T
         if plane==100:
-            basis=np.array([[0,1,1],[0,-1,1],[1,0,0]]).T
+            basis=np.array([[0.,1.,1.],[0.,-1.,1.],[1.,0.,0.]]).T
         if plane==110:
-            basis=np.array([[-1,1,1],[-1,1,-2],[1,1,0]]).T
+            basis=np.array([[-1.,1.,1.],[-1.,1.,-2.],[1.,1.,0.]]).T
         try:
             atoms_align_z=change_basis_atom(self.atom_obj,basis)
             return cut_z(atoms_align_z,layer)
