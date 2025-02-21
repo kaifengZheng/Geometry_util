@@ -399,7 +399,7 @@ def descriptor_table(atom:Atoms,all=True,descriptors=[],display_keys=False):
             if "CN4" in descriptors:
                 CNS4,diss4,CN_ave4=getCN_dis_N(atom,4)
                 dis_dict["CN4"]=np.round(CN_ave4,2)
-            if "surface_CN" in descriptors:
+            if "surface_CN1" in descriptors:
                 surface_CN_values=surface_CN(atom,method='CN')
                 dis_dict["surface_CN1"]=np.round(surface_CN_values,2)
             if "GCN1" in descriptors:
@@ -414,7 +414,7 @@ def descriptor_table(atom:Atoms,all=True,descriptors=[],display_keys=False):
             if "GCN4" in descriptors:
                 CNS4,diss4,GCN_ave4=getCN_dis_N(atom,4,option='GCN')
                 dis_dict["GCN4"]=np.round(GCN_ave4,2)
-            if "surface_GCN" in descriptors:
+            if "surface_GCN1" in descriptors:
                 surface_CN_values=surface_CN(atom,method='GCN')
                 dis_dict["surface_GCN1"]=np.round(surface_CN_values,2)
             if "bond_length" in descriptors:
