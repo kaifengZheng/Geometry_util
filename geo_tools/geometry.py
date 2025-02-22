@@ -302,7 +302,7 @@ def descriptor_table(atom:Atoms,all=True,descriptors=[],display_keys=False):
         print("2. CN2\n")
         print("3. CN3\n")
         print("4. CN4\n")
-        print("5. surface_CN1\n")
+        print("5. surface_CN\n")
         print("6. GCN1\n")
         print("7. GCN2\n")
         print("8. GCN3\n")
@@ -399,9 +399,9 @@ def descriptor_table(atom:Atoms,all=True,descriptors=[],display_keys=False):
             if "CN4" in descriptors:
                 CNS4,diss4,CN_ave4=getCN_dis_N(atom,4)
                 dis_dict["CN4"]=np.round(CN_ave4,2)
-            if "surface_CN1" in descriptors:
+            if "surface_CN" in descriptors:
                 surface_CN_values=surface_CN(atom,method='CN')
-                dis_dict["surface_CN1"]=np.round(surface_CN_values,2)
+                dis_dict["surface_CN"]=np.round(surface_CN_values,2)
             if "GCN1" in descriptors:
                 CNS1,diss1,GCN_ave1=getCN_dis_N(atom,1,option='GCN')
                 dis_dict["GCN1"]=np.round(GCN_ave1,2)
@@ -414,9 +414,9 @@ def descriptor_table(atom:Atoms,all=True,descriptors=[],display_keys=False):
             if "GCN4" in descriptors:
                 CNS4,diss4,GCN_ave4=getCN_dis_N(atom,4,option='GCN')
                 dis_dict["GCN4"]=np.round(GCN_ave4,2)
-            if "surface_GCN1" in descriptors:
+            if "surface_GCN" in descriptors:
                 surface_CN_values=surface_CN(atom,method='GCN')
-                dis_dict["surface_GCN1"]=np.round(surface_CN_values,2)
+                dis_dict["surface_GCN"]=np.round(surface_CN_values,2)
             if "bond_length" in descriptors:
                 CNS1,diss1,CN_ave1=getCN_dis_N(atom,1)
                 dis_dict["bond_length"]=np.round(np.mean(diss1),2)
