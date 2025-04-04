@@ -24,6 +24,26 @@ def centerize_pos(atoms:Atoms) -> Atoms:
     atoms.arrays['positions']=positions-positions.mean(axis=0)
     return atoms
 
+def cut_by_surface(particle,plane,layer):
+    if plane==111:
+        basis=np.array([[1.,1.,-2.],[1.,-1.,0.],[1.,1.,1.]]).T
+    if plane==100:
+        basis=np.array([[0.,1.,1.],[0.,-1.,1.],[1.,0.,0.]]).T
+    if plane==110:
+        basis=np.array([[-1.,1.,1.],[-1.,1.,-2.],[1.,1.,0.]]).T
+    try:
+        atoms_align_z=change_basis_pos(particle,basis)
+        return cut_z(atoms_align_z,layer)
+    except Exception as e:
+        print(e)
+def change_basis_pos(particle,basis)->np.ndarray:
+    """
+    atoms: Atoms object
+    basis: 3*3 matrix
+    """
+    new_pos=chang_basis(basis,particle)
+    new_pos=np.round(new_pos,3)
+    return new_pos # this cannot be the same atoms object
 def chang_basis(new_basis:np.array,positions:np.array)->np.array:
     """
     new_basis: need to be column vectors
@@ -35,17 +55,18 @@ def chang_basis(new_basis:np.array,positions:np.array)->np.array:
     A=np.round(np.linalg.inv(basis_scale_new),5)
     pos_new=np.round(np.dot(A,positions.T).T,5)
     return pos_new
+    
 
-def change_basis_atom(atoms:Atoms,basis)->Atoms:
-    """
-    atoms: Atoms object
-    basis: 3*3 matrix
-    """
-    positions=atoms.get_positions()
-    new_pos=chang_basis(basis,positions)
-    atoms_new=atoms.copy()
-    atoms_new.arrays['positions']=np.round(new_pos,3)
-    return atoms_new # this cannot be the same atoms object
+def cut_z(particle,layers)->np.ndarray:
+    if layers==0:
+        return particle
+    positions=np.round(particle,3)
+    z_list=positions[:,2]
+    z_list=np.round(z_list,decimals=3)
+    z_unique=np.unique(z_list)
+    z_list_order=np.round(np.sort(z_unique),3)
+    positions_cut=np.round(positions[positions[:,2]<z_list_order[-layers]],3)
+    return positions_cut
 def diameter_max(positions):
     """
     This algorithm calculates the radius of
@@ -258,6 +279,18 @@ def getCN_dis_N(atom:Atoms,N:int,option='CN'):
     CN_ave=np.mean(CNs)
     
     return CNs,dis,CN_ave
+def dim_pos(pos):
+    def num_zero_element(eigens):
+        eigens=np.round(eigens,5)
+        num=0
+        for i in range(len(eigens)):
+            if eigens[i]>1e-5:
+                num+=1
+        return num
+    sig_value=np.linalg.svd(np.array(pos))[1]
+    return num_zero_element(sig_value)
+
+
     
 def ellipsoid(atom:Atoms,tor=1e-3):
     def khachiyan_algorithm(atom:Atoms,tor=1e-3):
@@ -290,7 +323,13 @@ def moment_descriptor(atom:Atoms):
     """
     used for cluster with regular shape
     """
+    pos=atom.get_positions()
+    dimension=dim_pos(pos)
+    # print(dimension)
+    if dimension<3:
+        return 0,0
     moment_atom=atom.get_moments_of_inertia(vectors=False)
+    # print(moment_atom)
     I=np.sort(moment_atom) #I2 is the largest moment of inertia
     zeta=((I[2]-I[1])**2+(I[1]-I[0])**2+(I[0]-I[2])**2)/(I[0]**2+I[1]**2+I[2]**2)
     eta=(2*I[1]-I[0]-I[2])/I[2]
@@ -443,6 +482,7 @@ def descriptor_table(atom:Atoms,all=True,descriptors=[],display_keys=False):
                 dis_dict["Departure from sphere(moment)"]=np.round(zeta,6)
             if "oblateness_moment" in descriptors:
                 zeta,eta=moment_descriptor(atom)
+                # print(zeta,eta)
                 dis_dict["oblateness_moment"]=np.round(eta,2)+1
             if "oblateness_pca" in descriptors:
                 flatten,elongate=pca_oblate(atom)
@@ -472,6 +512,9 @@ def pca_oblate(atom:Atoms):
     pca=PCA(n_components=3)
     pos=atom.get_positions()
     pos = np.round(pos,5)
+    dimension=dim_pos(pos)
+    if dimension<3:
+        return 0,0
     pos_next=np.zeros_like(pos)
     max_value=np.max(pos,axis=0)
     min_value=np.min(pos,axis=0)
