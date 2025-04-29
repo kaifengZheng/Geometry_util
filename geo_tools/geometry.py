@@ -409,7 +409,7 @@ def descriptor_table(atom:Atoms,all=True,descriptors=[],display_keys=False):
                     "GCN3":np.round(GCN_ave3,2),
                     "GCN4":np.round(GCN_ave4,2),
                     "surface_GCN":np.round(sur_per_GCN_value,2),
-                    "bond_length":np.round(np.mean(diss1),2),
+                    "bond_length":np.round(np.mean(diss1),4),
                     "diameter_2radius":np.round(diameter_2radius,2),
                     "diameter_pca":np.round(diameter_pcaM,2),
                     "diameter_xy":np.round(diameter_xyM,2),
