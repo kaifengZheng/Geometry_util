@@ -129,7 +129,7 @@ def surface_per(atoms:Atoms,method='CN'):
     if method=='GCN':
         CNs,diss,CN_ave=getCN_dis_N(atoms,1,option='GCN')
     CN_surface=[cn for cn in CNs if cn<12]
-    return len(CN_surface)/len(CNs)
+    return len(CN_surface)/len(atoms.get_positions())
 
 def surface_CN(atoms:Atoms,method='CN'):
     """
@@ -543,7 +543,7 @@ def pca_oblate(atom:Atoms):
     # flatten_base=np.round(np.sqrt(b**2+a**2),2)
     # elongate_base=np.round(np.sqrt(a**2+c**2),2)
 
-    flatten=np.round(c/b,5)
+    flatten=np.round(1-c/b,5)
     elongate=np.round(b/a,5)
     diameter=np.round(np.sqrt(a**2+b**2+c**2)) #another method to calculate diameter
     return flatten,elongate
