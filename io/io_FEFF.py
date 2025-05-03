@@ -4,9 +4,15 @@ import shutil
 import re
 import glob
 from .io_general import dir_list, dir_create, read_xyz
-
+from pymatgen.core import Structure, Element,Molecule
+import pymatgen.io.feff
+import numpy as np
+from tabulate import tabulate
+from pymatgen.io.ase import AseAtomsAdaptor
+import pandas as pd
+from ase.io.cif import read_cif
 def read_xmu(path):
-    """
+    """ 
     :param path: sites folder
     :return:
     """
@@ -162,4 +168,96 @@ def get_averaging(path):
     ave_omega = sum_omega/sum(n_equ_site)
     ave_mu = sum_mu/sum(n_equ_site)
     return ave_omega, ave_mu, sum(n_equ_site)
+
+
+
+
+def calc_pot_atoms_list(path=None, sructure=None,absorber = None, radius = 8, absorber_list = [],supercell=[]):
+    """
+    Calculate the POTENTIAL and ATOMS card of feff input of given structure.
+    """
+    if path!=None and path.split('.')[1]=='xyz':
+        structure=Molecule.from_file(path)
+    elif path!=None and path.split('.')[1]=='cif':
+        structure=Structure.from_file(path)
+        if supercell!=[]:
+            structure=structure.make_supercell(supercell)
+    elif path==None and sructure is not None:
+        structure=sructure
+        if supercell!=[]:
+            structure=structure.make_supercell(supercell)
+    else:
+        raise ValueError("Please specify the path of structure file or the structure object.") 
+    
+    
+    pot_atoms_list = []
+    
+    if len(absorber_list) == 0:
+        if absorber is None:
+            raise ValueError("Please specify the absorber element.")
+        
+        absorber_species = Element(absorber)
+        absorber_list = np.where(np.array(structure.species) == absorber_species)[0]
+    
+    for i in absorber_list:
+        pot = pymatgen.io.feff.inputs.Potential(structure, int(i))
+        central_element = Element(pot.absorbing_atom)
+        ipotrow = [[0, central_element.Z, central_element.symbol, -1, -1, 0.001, 0]]
+        for el, amt in pot.struct.composition.items():
+            ipot = pot.pot_dict[el.symbol]
+            ipotrow.append([ipot, el.Z, el.symbol, -1, -1, amt, 0])
+              
+        cluster = np.array(pymatgen.io.feff.inputs.Atoms(structure, int(i), radius).get_lines())
+        # sort by distance
+        cluster = cluster[np.argsort(cluster[:, 5].astype(float))]
+        
+        # obtain unique potential
+        unique_potential = np.unique(cluster[:, 3])
+        map_potential = {unique_potential[i]: str(i) for i in range(len(unique_potential))}
+        
+        #pot index
+        pot_index=list(np.array(ipotrow)[:,0]) 
+        if len(map_potential)!=len(ipotrow):
+            miss_pot=set(pot_index).difference(list(map_potential.keys()))
+            raise ValueError(f"The radius is too short to include all potentials, please choose a larger radius(missing potential {miss_pot}).")
+        # replace the potential label
+        #cluster[:, 3] = [map_potential[str(i)] for i in cluster[:, 3]]
+        
+        # pot = []
+        # for i in map_potential.keys():
+        #     pot.append([map_potential[i], *ipotrow[int(i)][1:]])
+        
+        pot_atoms_list.append({"potential": tabulate(ipotrow, tablefmt="plain"), "atoms": tabulate(cluster, tablefmt="plain")})
+        
+    return pot_atoms_list
+
+def cif_to_feff(cif_path:str,absober:str,edge:str,radius=12,absorber_list=[],supercell=[3,3,3],save_path=None):
+    if save_path is None:
+        save_path="feff.inp"
+    atoms=read_cif(cif_path)
+    struc=AseAtomsAdaptor.get_structure(atoms)
+    pot=calc_pot_atoms_list(path=None, sructure=struc,absorber = "Cr", radius = 12, absorber_list = [],supercell=[3,3,3])
+    with open(save_path, "w") as f:
+        f.write("TITLE\n")
+        f.write("xx\n")
+        f.write("\n\n")
+        f.write("EDGE\n")
+        f.write(f"{edge}\n")
+        f.write("\n")
+        f.write("S02  1.0\n")
+        f.write("COREHOLE RPA\n")
+        f.write("CONTROL 1 1 1 1 1 1\n")
+        f.write("\n\n")
+        f.write("FMS 7.5 0\n")
+        f.write("EXCHANGE 0  0.9 -1\n")
+        f.write("SCF 5.6 0 100 0.1 1\n")
+        f.write("XANES 6 0.05 0.1\n")
+        f.write("\n\n")
+        f.write("POTENTIAL\n")
+        f.write(pot[0]["potential"])
+        f.write("\n\n")
+        f.write("ATOMS\n")
+        f.write(pot[0]["atoms"])
+        f.write("\n\n")
+        f.write("END")
 
