@@ -415,7 +415,7 @@ def descriptor_table(atom:Atoms,all=True,descriptors=[],display_keys=False):
                     "diameter_xy":np.round(diameter_xyM,2),
                     "MIAD":np.round(MIAD(atom),2),
                     "SAF_CN":np.round(sur_per_CN,2),
-                    "SARF_GCN":np.round(sur_per_GCN,2),
+                    "SAF_GCN":np.round(sur_per_GCN,2),
                     "Departure from sphere(moment)":np.round(zeta,6),
                     "oblateness_moment":np.round(eta,2)+1,
                     "oblateness_pca":np.round(flatten,2),
