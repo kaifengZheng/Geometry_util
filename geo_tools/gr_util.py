@@ -1,7 +1,11 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
-
+"""
+   Author: Kaifeng Zheng
+   This code generate pair distribution function and calculates 
+   coordination number by integrating the peaks.
+"""
 
 def gr_atom_from_dis_norho(dis,rmesh):
     dr=rmesh[1]-rmesh[0]
@@ -18,18 +22,26 @@ def gr_atom_from_dis_norho(dis,rmesh):
     return r,num_bin
 
 def coord_num(gr,rmesh,r1,r2,rho):
+    """
+    Calculate the coordination number between r1 and r2 from gr that is 
+    normalized by the density.
+    """
     dr=rmesh[1]-rmesh[0]
     index_start=np.where(rmesh>=r1)[0][0]
     index_end=np.where(rmesh<=r2)[0][-1]
     const=4*np.pi*rho*dr
     cn=0
     count=index_start
-    for r in rmesh[index_start:index_end]:
+    for r in rmesh[index_start:index_end+1]:
         cn+=gr[count]*const*r**2
         count+=1
     return cn
 
 def coord_num(gr,rmesh,r1,r2):
+    """
+    Calculate the coordination number between r1 and r2 from gr that is 
+    not normalized by the density.
+    """
     dr=rmesh[1]-rmesh[0]
     index_start=np.where(rmesh>=r1)[0][0]
     index_end=np.where(rmesh<=r2)[0][-1]
@@ -43,6 +55,9 @@ def coord_num(gr,rmesh,r1,r2):
 
 
 def radius(gr,rmesh,r1,r2):
+    """
+    <r>=\sum(r*(4pi g(r)r^2\delta r))/N_shell
+    """
     index_start=np.where(rmesh>=r1)[0][0]
     index_end=np.where(rmesh<=r2)[0][-1]
     dr=rmesh[1]-rmesh[0]

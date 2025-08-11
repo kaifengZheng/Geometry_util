@@ -16,6 +16,34 @@ import os
 from os import sys
 import platform
 system=platform.system()
+"""
+   Author: Kaifeng Zheng
+   This codes provides various geometric descriptors for atomic structures.
+   The descriptors include:
+        1. CN1
+        2. CN2
+        3. CN3
+        4. CN4
+        5. surface_CN
+        6. GCN1
+        7. GCN2
+        8. GCN3
+        9. GCN4
+        10. surface_GCN1
+        11. bond_length
+        12. diameter_2radius
+        13. diameter_pca
+        14. diameter_xy
+        15. MIAD
+        16. SVR_CN
+        17. SVR_GCN
+        18. Departure from sphere(moment)
+        19. oblateness_moment
+        20. oblateness_pca
+        21. atom_number
+    User can also add other descriptors in the database
+    
+"""
 def centerize_pos(atoms:Atoms) -> Atoms:
     """
     centerize the positions
@@ -58,6 +86,9 @@ def chang_basis(new_basis:np.array,positions:np.array)->np.array:
     
 
 def cut_z(particle,layers)->np.ndarray:
+    """
+    Cut the particle along its height.
+    """
     if layers==0:
         return particle
     positions=np.round(particle,3)
@@ -81,6 +112,9 @@ def diameter_max(positions):
     D = 2*np.max(dis)
     return D
 def diameter_pca(positions):
+    """
+    This algorithm calculates the diameter of the particle using PCA.
+    """
     pca=PCA(n_components=3)
     pos = np.round(positions,5)
     pos_next=np.zeros_like(pos)

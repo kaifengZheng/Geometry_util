@@ -2,6 +2,13 @@ import numpy as np
 #a: lattice constant
 #x,y,z are how many times lattice extends along this direction
 #x,y,z must large than 1
+"""
+   Author: Kaifeng Zheng
+   The code was generated when I was in Master's program at USC for NanoGlass
+   molecular dynamics simulations.
+   This code generated lattice with given basis vector. For now, it is only works
+   for cubic lattices.
+"""
 def fccbasis(a):
     fcc = [[0,0.5*a,0.5*a],[0.5*a,0,0.5*a],[0.5*a,0.5*a,0],[0,0,0],\
                     [0,0,a],[0,a,0],[a,0,0],[a,a,0],\

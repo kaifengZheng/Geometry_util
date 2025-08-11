@@ -6,6 +6,9 @@ from mpl_toolkits.mplot3d import Axes3D
 from mpl_toolkits.mplot3d import proj3d
 import matplotlib.pyplot as plt
 from sklearn.decomposition import PCA
+"""
+   Author: Kaifeng Zheng
+"""
 def ase_plot_more_info(atoms:Atoms,info:np.array):
     """
     plot more information of atoms object

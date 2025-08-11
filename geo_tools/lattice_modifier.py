@@ -5,6 +5,11 @@ from pymatgen.core.structure import Structure
 from pymatgen.io.ase import AseAtomsAdaptor
 from pymatgen.io.cif import  CifWriter
 from .geometry import neighbor_dis
+"""
+    Author: Kaifeng Zheng
+    This codes provide functions to operate on particles, such as 
+    adding surface distortion, rotating the view, change the lattice basis and so on.
+"""
 
 
 def layer_modifier(atoms,gap_width_pm,ori_lattice_par,cell_scale=[1,1,1],plot=True,legend=True)->Atoms:
