@@ -16,34 +16,6 @@ import os
 from os import sys
 import platform
 system=platform.system()
-"""
-   Author: Kaifeng Zheng
-   This codes provides various geometric descriptors for atomic structures.
-   The descriptors include:
-        1. CN1
-        2. CN2
-        3. CN3
-        4. CN4
-        5. surface_CN
-        6. GCN1
-        7. GCN2
-        8. GCN3
-        9. GCN4
-        10. surface_GCN1
-        11. bond_length
-        12. diameter_2radius
-        13. diameter_pca
-        14. diameter_xy
-        15. MIAD
-        16. SVR_CN
-        17. SVR_GCN
-        18. Departure from sphere(moment)
-        19. oblateness_moment
-        20. oblateness_pca
-        21. atom_number
-    User can also add other descriptors in the database
-    
-"""
 def centerize_pos(atoms:Atoms) -> Atoms:
     """
     centerize the positions
@@ -86,9 +58,6 @@ def chang_basis(new_basis:np.array,positions:np.array)->np.array:
     
 
 def cut_z(particle,layers)->np.ndarray:
-    """
-    Cut the particle along its height.
-    """
     if layers==0:
         return particle
     positions=np.round(particle,3)
@@ -112,9 +81,6 @@ def diameter_max(positions):
     D = 2*np.max(dis)
     return D
 def diameter_pca(positions):
-    """
-    This algorithm calculates the diameter of the particle using PCA.
-    """
     pca=PCA(n_components=3)
     pos = np.round(positions,5)
     pos_next=np.zeros_like(pos)
@@ -395,7 +361,7 @@ def descriptor_table(atom:Atoms,all=True,descriptors=[],display_keys=False):
     if display_keys==False:
         if all==True:
             zeta,eta=moment_descriptor(atom)
-            flatten=pca_oblate(atom)
+            flatten,elongate=pca_oblate(atom)
 
             # dis=distance_matrix(atom.arrays['positions'],atom.arrays['positions'])
             # dis_sort=np.round(np.sort(dis,axis=1),5) #set a tolerance of distance
@@ -448,8 +414,8 @@ def descriptor_table(atom:Atoms,all=True,descriptors=[],display_keys=False):
                     "diameter_pca":np.round(diameter_pcaM,2),
                     "diameter_xy":np.round(diameter_xyM,2),
                     "MIAD":np.round(MIAD(atom),2),
-                    "SVR_CN":np.round(sur_per_CN,2),
-                    "SVR_GCN":np.round(sur_per_GCN,2),
+                    "SAF_CN":np.round(sur_per_CN,2),
+                    "SAF_GCN":np.round(sur_per_GCN,2),
                     "Departure from sphere(moment)":np.round(zeta,6),
                     "oblateness_moment":np.round(eta,2)+1,
                     "oblateness_pca":np.round(flatten,2),
@@ -519,7 +485,7 @@ def descriptor_table(atom:Atoms,all=True,descriptors=[],display_keys=False):
                 # print(zeta,eta)
                 dis_dict["oblateness_moment"]=np.round(eta,2)+1
             if "oblateness_pca" in descriptors:
-                flatten=pca_oblate(atom)
+                flatten,elongate=pca_oblate(atom)
                 dis_dict["oblateness_pca"]=np.round(flatten,2)
             if "atom_number" in descriptors:
                 atom_num=len(atom.get_positions())
@@ -545,28 +511,42 @@ def descriptor_table(atom:Atoms,all=True,descriptors=[],display_keys=False):
 def pca_oblate(atom:Atoms):
     pca=PCA(n_components=3)
     pos=atom.get_positions()
-    center=pos.mean(axis=0)
-    pos=pos-center
     pos = np.round(pos,5)
     dimension=dim_pos(pos)
     if dimension<3:
-        return 1
+        return 0,0
+    pos_next=np.zeros_like(pos)
+    max_value=np.max(pos,axis=0)
+    min_value=np.min(pos,axis=0)
+    c,b,a=np.sort(max_value-min_value)
+    c_next,b_next,a_next=0,0,0
+    i=0
+    while a-a_next>1e-4 or c-c_next>1e-4 or b-b_next>1e-4:
+        """
+              SCF loop
+        """
+        pos_next=pos
+        max_value=np.max(pos_next,axis=0)
+        min_value=np.min(pos_next,axis=0)
+        c_next,b_next,a_next=np.round(np.sort(max_value-min_value),5)
+        
+        result=pca.fit(pos_next)
+        pos_fit=result.fit_transform(pos_next)
+        pos=np.round(pos_fit,5)
+        max_value=np.max(pos,axis=0)
+        min_value=np.min(pos,axis=0)
+        c,b,a=np.round(np.sort(max_value-min_value),5)
+        i+=1
 
-    # c_next,b_next,a_next=np.round(np.sort(max_value-min_value),5)
-    
-    result=pca.fit(pos)
-    # pos_fit=result.fit_transform(pos)
-    variences=result.explained_variance_ratio_
-    sigma1,sigma2,sigma3=np.round(np.sqrt(sorted(variences,reverse=True)),5)
-    sigma_eq=(sigma1+sigma2)/2
-    # flatten=np.round(1-c/b,5)
-    # elongate=np.round(sigma_eq/sigma_eq,5)
-    # diameter=np.round(np.sqrt(a**2+b**2+c**2)) #another method to calculate diameter
-    
-    sigma_pole=sigma3
-    oblateness=(sigma_eq-sigma_pole)/sigma_eq
-    flatten=np.round(oblateness,5)
-    return flatten
+
+    # #atoms_new=Atoms(atom.get_chemical_symbols(),pos_fit)
+    # flatten_base=np.round(np.sqrt(b**2+a**2),2)
+    # elongate_base=np.round(np.sqrt(a**2+c**2),2)
+
+    flatten=np.round(1-c/b,5)
+    elongate=np.round(b/a,5)
+    diameter=np.round(np.sqrt(a**2+b**2+c**2)) #another method to calculate diameter
+    return flatten,elongate
 
 
 
