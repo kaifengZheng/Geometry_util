@@ -1,4 +1,5 @@
 from .geometry import *
+from.gr_util import *
 from dataclasses import dataclass
 from .lattice_modifier import change_basis_atom,cut_z
 from ..io.io_general import write_xyz
@@ -175,6 +176,26 @@ class particle_database:
         return pd.DataFrame(shape_dict).astype(np.float64) 
         # except Exception as e:
         #     print(e)
+    def gr_analysis(self,rmin,rmax,bins=500):
+        """
+        Perform pair distribution function (g(r)) analysis on all particles.
+        Note: This analysis is suitable for small nanoparticles and does not include density normalization.
+        """
+        gr_results = {}
+        rmesh = np.linspace(rmin, rmax, bins)
+        for shape in tqdm(self.shape_all):
+            positions = shape.atom_obj.get_positions()
+            dist_matrix=cdist(positions,positions)
+            gr_accum = np.zeros(bins-1)
+            for i in range(dist_matrix.shape[0]):
+                r, gr = np.array(gr_atom_from_dis_norho(dist_matrix[i], rmesh))
+                gr_accum += gr
+            gr_avg = gr_accum / dist_matrix.shape[0]
+            gr_results[shape.name] = gr_avg
+        gr_results=pd.DataFrame(gr_results).astype(np.float64)
+        gr_results.insert(0,column='r',value=r)
+        return gr_results
+
     def remove_by_name(self,names,inplace=False):
         """
             Remove particles by their names.

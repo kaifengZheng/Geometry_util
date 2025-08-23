@@ -8,13 +8,26 @@ import pandas as pd
 """
 
 def gr_atom_from_dis_norho(dis,rmesh):
+    """
+    Calculate the radial distribution function g(r) from a list of interatomic distances.
+    The g(r) is normalized by the shell volume and the number density, resulting in units of 1/volume.
+
+    Parameters:
+    dis (array-like): Array of interatomic distances.
+    rmesh (array-like): Radial mesh points defining the bins for g(r).
+
+    Returns:
+    tuple: A tuple containing:
+        - r (list): The midpoints of the radial bins.
+        - num_bin (list): The normalized count of distances in each bin, representing g(r).
+    """
     dr=rmesh[1]-rmesh[0]
     num_bin=[]
     # V=4/3*np.pi*rmesh[-1]**3
     # N=len(dis)
     r=[]
     for i in range(len(rmesh)-1):
-        num=len(np.where((dis>=rmesh[i]) & (dis<rmesh[i+1]))[0])
+        num=len(np.where((dis>rmesh[i]) & (dis<=rmesh[i+1]))[0])
         r_loc=np.round(rmesh[i]+dr/2,6)
         num_nor=num/((4*np.pi*(r_loc**2)*dr))
         r.append(r_loc)
@@ -25,6 +38,12 @@ def coord_num(gr,rmesh,r1,r2,rho):
     """
     Calculate the coordination number between r1 and r2 from gr that is 
     normalized by the density.
+    rho: float
+        Number density of the system (atoms per unit volume).
+    r1: float
+        Lower bound of the radial distance for integration.
+    r2: float
+        Upper bound of the radial distance for integration.
     """
     dr=rmesh[1]-rmesh[0]
     index_start=np.where(rmesh>=r1)[0][0]

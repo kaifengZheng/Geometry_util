@@ -386,8 +386,8 @@ def descriptor_table(atom:Atoms,all=True,descriptors=[],display_keys=False):
         print("13. diameter_pca")
         print("14. diameter_xy")
         print("15. MIAD")
-        print("16. SVR_CN")
-        print("17. SVR_GCN")
+        print("16. SAF_CN")
+        print("17. SAF_GCN")
         print("18. Departure from sphere(moment)")
         print("19. oblateness_moment")
         print("20. oblateness_pca")
@@ -505,12 +505,12 @@ def descriptor_table(atom:Atoms,all=True,descriptors=[],display_keys=False):
             if "MIAD" in descriptors:
                 MIAD_value=MIAD(atom)
                 dis_dict["MIAD"]=np.round(MIAD_value,2)
-            if "SVR_CN" in descriptors:
+            if "SAF_CN" in descriptors:
                 sur_per=surface_per(atom)
-                dis_dict["SVR_CN"]=np.round(sur_per,2)
-            if "SVR_GCN" in descriptors:
+                dis_dict["SAF_CN"]=np.round(sur_per,2)
+            if "SAF_GCN" in descriptors:
                 sur_per=surface_per(atom)
-                dis_dict["SVR_GCN"]=np.round(sur_per,2)
+                dis_dict["SAF_GCN"]=np.round(sur_per,2)
             if "Departure from sphere(moment)" in descriptors:
                 zeta,eta=moment_descriptor(atom)
                 dis_dict["Departure from sphere(moment)"]=np.round(zeta,6)
