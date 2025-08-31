@@ -260,9 +260,28 @@ def getCN_dis_Oneshell(positions,center_position,N,thickness=1e-1):
     # print(sort_dis)
     atom_shell=len(np.where(np.isclose(dis_all,sort_dis[N-1],atol=thickness))[0]) 
     return atom_shell,sort_dis[N-1]
-def getGCN_dis_Oneshell(positions,center_position,N,thickness=1e-1):
+def getGCN_dis_Oneshell(positions,center_position,N,thickness=1e-1,bulk_CN=12):
     """
     calculate Generalized coordination number and distance for N nearest neighbors with fixed error bar
+    Parameters
+    ----------
+    positions : np.ndarray
+        Atomic positions.
+    center_position : np.ndarray
+        Center atom position.
+    N : int
+        Nth nearest neighbor.
+    thickness : float
+        Error bar thickness.
+    bulk_CN : float
+        Bulk coordination number (maximum coordination in the lattice configuration). Default is 12 for FCC.
+
+    Returns
+    -------
+    atom_shell : int
+        Coordination number of Nth nearest neighbors of the center atom.
+    dis : float
+        Distance of Nth nearest neighbors of the center atom.
 
     """
     dis_all = np.around(cdist([center_position], positions,metric='euclidean'), decimals=1)[0] #must add [] here
@@ -281,7 +300,7 @@ def getGCN_dis_Oneshell(positions,center_position,N,thickness=1e-1):
     # print(CNs)
     # print(np.sum(CNs)/np.max(CNs))
     # print(CNs)
-    return np.sum(CNs)/np.max(CNs),sort_dis[N-1]
+    return np.sum(CNs)/bulk_CN,sort_dis[N-1]
 
 def getCN_dis_N(atom:Atoms,N:int,option='CN'):
     """
