@@ -380,7 +380,7 @@ def moment_descriptor(atom:Atoms):
     dimension=dim_pos(pos)
     # print(dimension)
     if dimension<3:
-        return 0,0
+        return 0,1
     moment_atom=atom.get_moments_of_inertia(vectors=False)
     # print(moment_atom)
     I=np.sort(moment_atom) #I2 is the largest moment of inertia
@@ -434,10 +434,6 @@ def descriptor_table(atom:Atoms,all=True,descriptors=[],display_keys=False):
             # print(GCN_ave1,GCN_ave2,GCN_ave3,GCN_ave4)
             # mean_c=CN_ave1
             # RMS_c=np.sqrt(np.sum((CNS-mean_c)**2/len(CNS)))
-            if eta<10e-10 and eta>-10e-10:
-                eta=0.0
-            if zeta<10e-10 and zeta>-10e-10:
-                zeta=0.0
             diameter_2radius=diameter_max(atom.get_positions())
             diameter_pcaM=diameter_pca(atom.get_positions())
             diameter_xyM=diameter_xy(atom.get_positions())
@@ -536,7 +532,7 @@ def descriptor_table(atom:Atoms,all=True,descriptors=[],display_keys=False):
             if "oblateness_moment" in descriptors:
                 zeta,eta=moment_descriptor(atom)
                 # print(zeta,eta)
-                dis_dict["oblateness_moment"]=np.round(eta,2)+1
+                dis_dict["oblateness_moment"]=np.round(eta,2)
             if "oblateness_pca" in descriptors:
                 flatten=pca_oblate(atom)
                 dis_dict["oblateness_pca"]=np.round(flatten,2)
