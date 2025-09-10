@@ -136,17 +136,6 @@ def rotation_matrix(alpha, beta,gamma):
 
 def angle_r(vector1,vector2):
     return np.arccos(np.dot(vector1,vector2)/(np.linalg.norm(vector1)*np.linalg.norm(vector2)))
-def chang_basis(new_basis:np.array,positions:np.array)->np.array:
-    """
-    new_basis: need to be column vectors
-    """
-    scale=np.array([[1/np.linalg.norm(new_basis[:,0]),0,0],
-                [0,1/np.linalg.norm(new_basis[:,1]),0],
-                [0,0,1/np.linalg.norm(new_basis[:,2])]])
-    basis_scale_new=np.dot(new_basis,scale)
-    A=np.round(np.linalg.inv(basis_scale_new),3)
-    pos_new=np.round(np.dot(A,positions.T).T,3)
-    return pos_new
 
 def centerize_pos(atoms:Atoms) -> Atoms:
     """
@@ -164,24 +153,45 @@ def change_basis_atom(atoms:Atoms,basis)->Atoms:
     positions=atoms.get_positions()
     new_pos=chang_basis(basis,positions)
     atoms_new=atoms.copy()
-    atoms_new.arrays['positions']=np.round(new_pos,3)
+    atoms_new.arrays['positions']=new_pos
     return atoms_new # this cannot be the same atoms object
 
-    
-def cut_z(atoms:Atoms,layers)->Atoms:
-    if layers==0:
-        return atoms
-    positions=np.round(atoms.get_positions(),3)
-    z_list=positions[:,2]
-    z_list=np.round(z_list,decimals=3)
-    z_unique=np.unique(z_list)
-    z_list_order=np.round(np.sort(z_unique),3)
-    positions_cut=np.round(positions[positions[:,2]<z_list_order[-layers]],3)
 
-    atoms_cut=atoms.copy()
-    atoms_cut.arrays['positions']=positions_cut
-    atoms_cut.arrays['numbers']=atoms_cut.arrays['numbers'][:len(positions_cut)]
-    return atoms_cut
+
+def change_basis_pos(particle,basis)->np.ndarray:
+    """
+    atoms: Atoms object
+    basis: 3*3 matrix
+    """
+    new_pos=chang_basis(basis,particle)
+    new_pos=np.round(new_pos,5)
+    return new_pos # this cannot be the same atoms object
+def chang_basis(new_basis:np.array,positions:np.array)->np.array:
+    """
+    new_basis: need to be column vectors
+    """
+    scale=np.array([[1/np.linalg.norm(new_basis[:,0]),0,0],
+                [0,1/np.linalg.norm(new_basis[:,1]),0],
+                [0,0,1/np.linalg.norm(new_basis[:,2])]])
+    basis_scale_new=np.round(np.dot(new_basis,scale),5)
+    A=np.round(np.linalg.inv(basis_scale_new),5)
+    pos_new=np.round(np.dot(A,positions.T).T,5)
+    return pos_new
+    
+
+def cut_z(particle,layers)->np.ndarray:
+    """
+    Cut the particle along its height.
+    """
+    if layers==0:
+        return particle
+    positions=particle
+    z_list=positions[:,2]
+    z_list=np.round(z_list,decimals=5)
+    z_unique=np.unique(z_list)
+    z_list_order=np.round(np.sort(z_unique),5)
+    positions_cut=np.round(positions[positions[:,2]<z_list_order[-layers]],5)
+    return positions_cut
 
 def atom2pymat_cif(atoms,filename):
     """

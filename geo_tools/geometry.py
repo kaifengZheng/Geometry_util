@@ -70,7 +70,7 @@ def change_basis_pos(particle,basis)->np.ndarray:
     basis: 3*3 matrix
     """
     new_pos=chang_basis(basis,particle)
-    new_pos=np.round(new_pos,3)
+    new_pos=np.round(new_pos,5)
     return new_pos # this cannot be the same atoms object
 def chang_basis(new_basis:np.array,positions:np.array)->np.array:
     """
@@ -91,12 +91,12 @@ def cut_z(particle,layers)->np.ndarray:
     """
     if layers==0:
         return particle
-    positions=np.round(particle,3)
+    positions=particle
     z_list=positions[:,2]
-    z_list=np.round(z_list,decimals=3)
+    z_list=np.round(z_list,decimals=5)
     z_unique=np.unique(z_list)
-    z_list_order=np.round(np.sort(z_unique),3)
-    positions_cut=np.round(positions[positions[:,2]<z_list_order[-layers]],3)
+    z_list_order=np.round(np.sort(z_unique),5)
+    positions_cut=np.round(positions[positions[:,2]<z_list_order[-layers]],5)
     return positions_cut
 def diameter_max(positions):
     """
@@ -251,7 +251,7 @@ def getCN_dis_Oneshell(positions,center_position,N,thickness=1e-1):
     """
     # center_position = positions.mean(axis=0)
     # The precision is 0.1A
-    dis_all = np.around(cdist([center_position], positions,metric='euclidean'), decimals=1)[0] #must add [] here
+    dis_all = np.around(cdist([center_position], positions,metric='euclidean'), decimals=3)[0] #must add [] here
     sort_dis=np.unique(np.sort(dis_all[dis_all>0]))
     if N>len(sort_dis):
         return 0,sort_dis[-1]

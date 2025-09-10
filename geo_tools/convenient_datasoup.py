@@ -34,7 +34,7 @@ class particle:
         pos=self.atom_obj.get_positions()
         center=np.mean(pos,axis=0)
         pos_center=pos-center
-        self.atom_obj.set_positions(np.round(pos_center,3))
+        self.atom_obj.set_positions(pos_center)
     def shape_size(self):
         """
         This method returns the shape descriptor of the particle storing in a pandas DataFrame.
